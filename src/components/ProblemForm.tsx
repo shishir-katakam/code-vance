@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { X } from 'lucide-react';
+import { X, Brain } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProblemFormProps {
   onSubmit: (problem: any) => void;
@@ -23,14 +25,66 @@ const ProblemForm = ({ onSubmit, onCancel }: ProblemFormProps) => {
     difficulty: '',
     completed: false
   });
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { toast } = useToast();
 
   const platforms = ['LeetCode', 'CodeChef', 'GeeksforGeeks', 'HackerRank', 'Codeforces', 'AtCoder'];
-  const topics = ['Arrays', 'Strings', 'Trees', 'Graphs', 'Dynamic Programming', 'Sorting', 'Searching', 'Linked Lists', 'Stacks', 'Queues'];
   const languages = ['Python', 'JavaScript', 'Java', 'C++', 'C', 'Go', 'Rust', 'TypeScript'];
-  const difficulties = ['Easy', 'Medium', 'Hard'];
+
+  const analyzeWithAI = async () => {
+    if (!formData.name || !formData.description) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide problem name and description before analyzing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-problem', {
+        body: {
+          problemName: formData.name,
+          description: formData.description,
+          platform: formData.platform
+        }
+      });
+
+      if (error) throw error;
+
+      setFormData(prev => ({
+        ...prev,
+        topic: data.topic,
+        difficulty: data.difficulty
+      }));
+
+      toast({
+        title: "Analysis Complete",
+        description: `Detected: ${data.topic} (${data.difficulty})`,
+      });
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Could not analyze the problem. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.topic || !formData.difficulty) {
+      toast({
+        title: "Missing Analysis",
+        description: "Please analyze the problem with AI first.",
+        variant: "destructive",
+      });
+      return;
+    }
     onSubmit(formData);
   };
 
@@ -84,46 +138,42 @@ const ProblemForm = ({ onSubmit, onCancel }: ProblemFormProps) => {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="topic" className="text-white">Topic</Label>
-              <Select onValueChange={(value) => setFormData({ ...formData, topic: value })}>
-                <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                  <SelectValue placeholder="Select topic" />
-                </SelectTrigger>
-                <SelectContent>
-                  {topics.map((topic) => (
-                    <SelectItem key={topic} value={topic}>{topic}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="flex justify-center">
+            <Button
+              type="button"
+              onClick={analyzeWithAI}
+              disabled={isAnalyzing || !formData.name || !formData.description}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            >
+              <Brain className="h-4 w-4 mr-2" />
+              {isAnalyzing ? 'Analyzing with AI...' : 'Analyze with DeepSeek AI'}
+            </Button>
+          </div>
+
+          {formData.topic && formData.difficulty && (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+              <div className="text-center text-white">
+                <p className="text-sm text-gray-300">AI Analysis Result:</p>
+                <p className="text-lg font-semibold">
+                  <span className="text-purple-400">{formData.topic}</span> • 
+                  <span className="text-pink-400 ml-2">{formData.difficulty}</span>
+                </p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="language" className="text-white">Language</Label>
-              <Select onValueChange={(value) => setFormData({ ...formData, language: value })}>
-                <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  {languages.map((language) => (
-                    <SelectItem key={language} value={language}>{language}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="difficulty" className="text-white">Difficulty</Label>
-              <Select onValueChange={(value) => setFormData({ ...formData, difficulty: value })}>
-                <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                  <SelectValue placeholder="Select difficulty" />
-                </SelectTrigger>
-                <SelectContent>
-                  {difficulties.map((difficulty) => (
-                    <SelectItem key={difficulty} value={difficulty}>{difficulty}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="language" className="text-white">Programming Language</Label>
+            <Select onValueChange={(value) => setFormData({ ...formData, language: value })}>
+              <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                {languages.map((language) => (
+                  <SelectItem key={language} value={language}>{language}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
@@ -133,6 +183,7 @@ const ProblemForm = ({ onSubmit, onCancel }: ProblemFormProps) => {
             <Button 
               type="submit" 
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              disabled={!formData.topic || !formData.difficulty}
             >
               Add Problem
             </Button>
