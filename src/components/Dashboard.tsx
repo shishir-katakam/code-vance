@@ -133,6 +133,7 @@ const Dashboard = () => {
               <ProblemForm 
                 onSubmit={addProblem}
                 onCancel={() => setShowAddProblem(false)}
+                problems={problems}
               />
             )}
 

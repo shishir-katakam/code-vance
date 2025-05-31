@@ -16,7 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    const { problemName, description, platform } = await req.json();
+    const { problemName, description, platform, currentProblems } = await req.json();
 
     console.log('Analyzing problem:', { problemName, description, platform });
 
@@ -33,20 +33,30 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an expert coding problem analyzer. Analyze the given problem and return ONLY a JSON object with the following structure:
+            content: `You are an expert coding problem analyzer. Analyze the given problem and current progress to provide recommendations.
+
+Current user's problem history: ${JSON.stringify(currentProblems)}
+
+Return ONLY a JSON object with this structure:
 {
   "topic": "one of: Arrays, Strings, Trees, Graphs, Dynamic Programming, Sorting, Searching, Linked Lists, Stacks, Queues, Hash Tables, Heaps, Recursion, Backtracking, Greedy, Math, Bit Manipulation, Two Pointers, Sliding Window",
-  "difficulty": "one of: Easy, Medium, Hard"
+  "difficulty": "one of: Easy, Medium, Hard",
+  "recommendation": "should_focus or move_to_next",
+  "reason": "brief explanation why focus or move on (max 50 words)"
 }
 
-Base your analysis on the problem name, description, and typical difficulty levels from ${platform || 'coding platforms'}. Return ONLY the JSON object, no additional text.`
+Base recommendation on:
+- If topic progress < 60%, suggest "should_focus"
+- If topic progress >= 80% and mostly easy problems, suggest "move_to_next"
+- If struggling with medium/hard problems, suggest "should_focus"
+- Consider difficulty progression and completion rate`
           },
           {
             role: 'user',
             content: `Problem Name: ${problemName}\nDescription: ${description}\nPlatform: ${platform || 'Unknown'}`
           }
         ],
-        max_tokens: 150,
+        max_tokens: 200,
         temperature: 0.1
       }),
     });
@@ -67,7 +77,12 @@ Base your analysis on the problem name, description, and typical difficulty leve
     } catch (parseError) {
       console.error('Failed to parse AI response:', content);
       // Fallback to default values if parsing fails
-      analysis = { topic: 'Arrays', difficulty: 'Medium' };
+      analysis = { 
+        topic: 'Arrays', 
+        difficulty: 'Medium',
+        recommendation: 'should_focus',
+        reason: 'Continue practicing to strengthen fundamentals'
+      };
     }
 
     return new Response(JSON.stringify(analysis), {
@@ -77,8 +92,10 @@ Base your analysis on the problem name, description, and typical difficulty leve
     console.error('Error in analyze-problem function:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      topic: 'Arrays', // fallback
-      difficulty: 'Medium' // fallback
+      topic: 'Arrays',
+      difficulty: 'Medium',
+      recommendation: 'should_focus',
+      reason: 'Continue practicing to strengthen fundamentals'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

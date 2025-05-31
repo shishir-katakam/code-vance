@@ -6,16 +6,25 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { X, Brain } from 'lucide-react';
+import { X, Brain, TrendingUp, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+
+interface Problem {
+  id: number;
+  topic: string;
+  language: string;
+  difficulty: string;
+  completed: boolean;
+}
 
 interface ProblemFormProps {
   onSubmit: (problem: any) => void;
   onCancel: () => void;
+  problems: Problem[];
 }
 
-const ProblemForm = ({ onSubmit, onCancel }: ProblemFormProps) => {
+const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -26,10 +35,18 @@ const ProblemForm = ({ onSubmit, onCancel }: ProblemFormProps) => {
     completed: false
   });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<any>(null);
   const { toast } = useToast();
 
   const platforms = ['LeetCode', 'CodeChef', 'GeeksforGeeks', 'HackerRank', 'Codeforces', 'AtCoder'];
   const languages = ['Python', 'JavaScript', 'Java', 'C++', 'C', 'Go', 'Rust', 'TypeScript'];
+
+  const calculateTopicProgress = (topic: string) => {
+    const topicProblems = problems.filter(p => p.topic === topic);
+    if (topicProblems.length === 0) return 0;
+    const completed = topicProblems.filter(p => p.completed).length;
+    return Math.round((completed / topicProblems.length) * 100);
+  };
 
   const analyzeWithAI = async () => {
     if (!formData.name || !formData.description) {
@@ -47,7 +64,8 @@ const ProblemForm = ({ onSubmit, onCancel }: ProblemFormProps) => {
         body: {
           problemName: formData.name,
           description: formData.description,
-          platform: formData.platform
+          platform: formData.platform,
+          currentProblems: problems
         }
       });
 
@@ -58,6 +76,8 @@ const ProblemForm = ({ onSubmit, onCancel }: ProblemFormProps) => {
         topic: data.topic,
         difficulty: data.difficulty
       }));
+
+      setAnalysis(data);
 
       toast({
         title: "Analysis Complete",
@@ -87,6 +107,8 @@ const ProblemForm = ({ onSubmit, onCancel }: ProblemFormProps) => {
     }
     onSubmit(formData);
   };
+
+  const topicProgress = analysis ? calculateTopicProgress(analysis.topic) : 0;
 
   return (
     <Card className="bg-black/40 border-white/10 backdrop-blur-md">
@@ -150,14 +172,56 @@ const ProblemForm = ({ onSubmit, onCancel }: ProblemFormProps) => {
             </Button>
           </div>
 
-          {formData.topic && formData.difficulty && (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-              <div className="text-center text-white">
-                <p className="text-sm text-gray-300">AI Analysis Result:</p>
-                <p className="text-lg font-semibold">
-                  <span className="text-purple-400">{formData.topic}</span> • 
-                  <span className="text-pink-400 ml-2">{formData.difficulty}</span>
-                </p>
+          {analysis && (
+            <div className="space-y-4">
+              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                <div className="text-center text-white mb-3">
+                  <p className="text-sm text-gray-300">AI Analysis Result:</p>
+                  <p className="text-lg font-semibold">
+                    <span className="text-purple-400">{analysis.topic}</span> • 
+                    <span className="text-pink-400 ml-2">{analysis.difficulty}</span>
+                  </p>
+                </div>
+                
+                {/* Topic Progress */}
+                <div className="bg-black/20 rounded-lg p-3 mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-300 flex items-center">
+                      <Target className="h-4 w-4 mr-1" />
+                      {analysis.topic} Progress
+                    </span>
+                    <span className="text-sm font-medium text-purple-400">{topicProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${topicProgress}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* AI Recommendation */}
+                <div className={`rounded-lg p-3 border ${
+                  analysis.recommendation === 'should_focus' 
+                    ? 'bg-yellow-500/10 border-yellow-500/30' 
+                    : 'bg-green-500/10 border-green-500/30'
+                }`}>
+                  <div className="flex items-start space-x-2">
+                    <TrendingUp className={`h-4 w-4 mt-0.5 ${
+                      analysis.recommendation === 'should_focus' 
+                        ? 'text-yellow-400' 
+                        : 'text-green-400'
+                    }`} />
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        {analysis.recommendation === 'should_focus' 
+                          ? '🎯 Keep Practicing This Topic' 
+                          : '✨ Ready for Next Topic'}
+                      </p>
+                      <p className="text-xs text-gray-300 mt-1">{analysis.reason}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
