@@ -33,13 +33,21 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an expert coding problem analyzer. Analyze the given problem and current progress to provide recommendations.
+            content: `You are an expert coding problem analyzer. Analyze the given problem carefully and classify it accurately.
+
+IMPORTANT: Distinguish between:
+- Simple arithmetic/basic operations (Easy difficulty, Math topic)
+- Complex algorithmic problems (Medium/Hard difficulty, specific algorithm topics)
+
+For example:
+- "sum of two numbers" or "adding two numbers" = Easy Math problem (basic arithmetic)
+- "Two Sum array problem" or "find two numbers that add to target" = Medium Arrays problem (algorithm)
 
 Current user's problem history: ${JSON.stringify(currentProblems)}
 
 Return ONLY a JSON object with this structure:
 {
-  "topic": "one of: Arrays, Strings, Trees, Graphs, Dynamic Programming, Sorting, Searching, Linked Lists, Stacks, Queues, Hash Tables, Heaps, Recursion, Backtracking, Greedy, Math, Bit Manipulation, Two Pointers, Sliding Window",
+  "topic": "one of: Math, Arrays, Strings, Trees, Graphs, Dynamic Programming, Sorting, Searching, Linked Lists, Stacks, Queues, Hash Tables, Heaps, Recursion, Backtracking, Greedy, Bit Manipulation, Two Pointers, Sliding Window",
   "difficulty": "one of: Easy, Medium, Hard",
   "recommendation": "should_focus or move_to_next",
   "reason": "brief explanation why focus or move on (max 50 words)"
@@ -53,7 +61,7 @@ Base recommendation on:
           },
           {
             role: 'user',
-            content: `Problem Name: ${problemName}\nDescription: ${description}\nPlatform: ${platform || 'Unknown'}`
+            content: `Problem Name: ${problemName}\nDescription: ${description}\nPlatform: ${platform || 'Unknown'}\n\nPlease classify this problem accurately. If it's about basic arithmetic operations (like adding, subtracting numbers), classify it as Math/Easy. Only use Arrays topic for problems involving array data structures and algorithms.`
           }
         ],
         max_tokens: 200,
@@ -73,13 +81,15 @@ Base recommendation on:
     // Parse the JSON response
     let analysis;
     try {
-      analysis = JSON.parse(content);
+      // Remove any markdown formatting if present
+      const cleanContent = content.replace(/```json\n?|\n?```/g, '').trim();
+      analysis = JSON.parse(cleanContent);
     } catch (parseError) {
       console.error('Failed to parse AI response:', content);
       // Fallback to default values if parsing fails
       analysis = { 
-        topic: 'Arrays', 
-        difficulty: 'Medium',
+        topic: 'Math', 
+        difficulty: 'Easy',
         recommendation: 'should_focus',
         reason: 'Continue practicing to strengthen fundamentals'
       };
@@ -92,8 +102,8 @@ Base recommendation on:
     console.error('Error in analyze-problem function:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      topic: 'Arrays',
-      difficulty: 'Medium',
+      topic: 'Math',
+      difficulty: 'Easy',
       recommendation: 'should_focus',
       reason: 'Continue practicing to strengthen fundamentals'
     }), {
