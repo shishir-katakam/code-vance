@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+const openaiApiKey = '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';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,28 +20,43 @@ serve(async (req) => {
 
     console.log('Analyzing problem:', { problemName, description, platform });
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openRouterApiKey}`,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://codetracker.lovable.app',
-        'X-Title': 'CodeTracker',
       },
       body: JSON.stringify({
-        model: 'deepseek/deepseek-chat',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: `You are an expert coding problem analyzer. Analyze the given problem carefully and classify it accurately.
+            content: `You are an expert coding problem analyzer. Analyze the given problem carefully and classify it accurately based on the actual content and requirements.
 
-IMPORTANT: Distinguish between:
-- Simple arithmetic/basic operations (Easy difficulty, Math topic)
-- Complex algorithmic problems (Medium/Hard difficulty, specific algorithm topics)
+CLASSIFICATION RULES:
+- Math: Basic arithmetic, mathematical formulas, number theory, geometry calculations
+- Arrays: Problems involving array manipulation, searching, sorting arrays, subarray problems
+- Strings: String manipulation, pattern matching, string algorithms
+- Trees: Binary trees, tree traversal, tree construction problems
+- Graphs: Graph traversal, shortest path, graph algorithms
+- Dynamic Programming: Optimization problems with overlapping subproblems
+- Sorting: Sorting algorithms and related problems
+- Searching: Search algorithms, binary search variations
+- Linked Lists: Linked list operations and manipulations
+- Stacks/Queues: Stack and queue data structure problems
+- Hash Tables: Hash map/set problems, frequency counting
+- Heaps: Priority queue, heap operations
+- Recursion: Recursive solutions, divide and conquer
+- Backtracking: Constraint satisfaction, exploring all possibilities
+- Greedy: Greedy algorithms, local optimization
+- Bit Manipulation: Bitwise operations
+- Two Pointers: Two pointer technique problems
+- Sliding Window: Sliding window pattern problems
 
-For example:
-- "sum of two numbers" or "adding two numbers" = Easy Math problem (basic arithmetic)
-- "Two Sum array problem" or "find two numbers that add to target" = Medium Arrays problem (algorithm)
+DIFFICULTY RULES:
+- Easy: Basic implementation, simple logic, straightforward approach
+- Medium: Requires algorithmic thinking, moderate complexity, multiple steps
+- Hard: Complex algorithms, advanced data structures, optimization required
 
 Current user's problem history: ${JSON.stringify(currentProblems)}
 
@@ -61,16 +76,20 @@ Base recommendation on:
           },
           {
             role: 'user',
-            content: `Problem Name: ${problemName}\nDescription: ${description}\nPlatform: ${platform || 'Unknown'}\n\nPlease classify this problem accurately. If it's about basic arithmetic operations (like adding, subtracting numbers), classify it as Math/Easy. Only use Arrays topic for problems involving array data structures and algorithms.`
+            content: `Problem Name: ${problemName}
+Description: ${description}
+Platform: ${platform || 'Unknown'}
+
+Analyze this problem carefully. Look at the problem name and description to determine what algorithmic concepts, data structures, or mathematical operations are required. Classify the topic based on the PRIMARY skill needed to solve this problem.`
           }
         ],
         max_tokens: 200,
-        temperature: 0.1
+        temperature: 0.3
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status}`);
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -84,14 +103,44 @@ Base recommendation on:
       // Remove any markdown formatting if present
       const cleanContent = content.replace(/```json\n?|\n?```/g, '').trim();
       analysis = JSON.parse(cleanContent);
+      
+      // Validate the response has required fields
+      if (!analysis.topic || !analysis.difficulty || !analysis.recommendation) {
+        throw new Error('Invalid response structure');
+      }
     } catch (parseError) {
-      console.error('Failed to parse AI response:', content);
-      // Fallback to default values if parsing fails
+      console.error('Failed to parse AI response:', content, parseError);
+      // Fallback - try to determine from problem name/description
+      let fallbackTopic = 'Math';
+      let fallbackDifficulty = 'Easy';
+      
+      const problemText = (problemName + ' ' + description).toLowerCase();
+      
+      if (problemText.includes('array') || problemText.includes('list') || problemText.includes('element')) {
+        fallbackTopic = 'Arrays';
+        fallbackDifficulty = 'Medium';
+      } else if (problemText.includes('string') || problemText.includes('character') || problemText.includes('substring')) {
+        fallbackTopic = 'Strings';
+        fallbackDifficulty = 'Medium';
+      } else if (problemText.includes('tree') || problemText.includes('binary') || problemText.includes('node')) {
+        fallbackTopic = 'Trees';
+        fallbackDifficulty = 'Medium';
+      } else if (problemText.includes('graph') || problemText.includes('vertex') || problemText.includes('edge')) {
+        fallbackTopic = 'Graphs';
+        fallbackDifficulty = 'Hard';
+      } else if (problemText.includes('dynamic') || problemText.includes('optimization') || problemText.includes('subsequence')) {
+        fallbackTopic = 'Dynamic Programming';
+        fallbackDifficulty = 'Hard';
+      } else if (problemText.includes('sort') || problemText.includes('order')) {
+        fallbackTopic = 'Sorting';
+        fallbackDifficulty = 'Medium';
+      }
+      
       analysis = { 
-        topic: 'Math', 
-        difficulty: 'Easy',
+        topic: fallbackTopic, 
+        difficulty: fallbackDifficulty,
         recommendation: 'should_focus',
-        reason: 'Continue practicing to strengthen fundamentals'
+        reason: 'Problem analyzed using fallback classification'
       };
     }
 
@@ -100,12 +149,28 @@ Base recommendation on:
     });
   } catch (error) {
     console.error('Error in analyze-problem function:', error);
+    
+    // Smart fallback based on problem content
+    const { problemName = '', description = '' } = await req.json().catch(() => ({}));
+    const problemText = (problemName + ' ' + description).toLowerCase();
+    
+    let errorTopic = 'Math';
+    let errorDifficulty = 'Easy';
+    
+    if (problemText.includes('array') || problemText.includes('list')) {
+      errorTopic = 'Arrays';
+      errorDifficulty = 'Medium';
+    } else if (problemText.includes('string')) {
+      errorTopic = 'Strings';
+      errorDifficulty = 'Medium';
+    }
+    
     return new Response(JSON.stringify({ 
       error: error.message,
-      topic: 'Math',
-      difficulty: 'Easy',
+      topic: errorTopic,
+      difficulty: errorDifficulty,
       recommendation: 'should_focus',
-      reason: 'Continue practicing to strengthen fundamentals'
+      reason: 'Error occurred during analysis, using fallback classification'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
