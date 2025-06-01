@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openaiApiKey = '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';
+const deepseekApiKey = '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';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -104,20 +104,20 @@ serve(async (req) => {
 
     console.log('Analyzing problem:', { problemName, description, platform });
 
-    // Try OpenAI API first with timeout
+    // Try DeepSeek API first with timeout
     let analysis;
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
+          'Authorization': `Bearer ${deepseekApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'deepseek-chat',
           messages: [
             {
               role: 'system',
@@ -172,7 +172,7 @@ Analyze this problem and determine the PRIMARY skill/topic needed to solve it.`
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
+        throw new Error(`DeepSeek API error: ${response.status} - ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -192,7 +192,7 @@ Analyze this problem and determine the PRIMARY skill/topic needed to solve it.`
       console.log('Successfully parsed AI analysis:', analysis);
 
     } catch (apiError) {
-      console.error('OpenAI API failed, using fallback:', apiError);
+      console.error('DeepSeek API failed, using fallback:', apiError);
       
       // Use enhanced fallback classification
       const fallback = classifyProblemFallback(problemName, description);
