@@ -60,7 +60,8 @@ const TopicProgress = ({ problems }: TopicProgressProps) => {
 
   const topicProgress = Object.values(topicStats).map((stat: any) => {
     // Calculate percentage based on completed problems vs required for mastery
-    const masteryPercentage = Math.min(100, Math.round((stat.completed / stat.requiredForMastery) * 100));
+    // Cap at 90% to never show 100% until truly mastered
+    const masteryPercentage = Math.min(90, Math.round((stat.completed / stat.requiredForMastery) * 100));
     // Calculate progress within current problems
     const currentProgress = Math.round((stat.completed / stat.total) * 100);
     
@@ -80,22 +81,19 @@ const TopicProgress = ({ problems }: TopicProgressProps) => {
   };
 
   const getMasteryLevel = (percentage: number) => {
-    if (percentage >= 90) return 'Master';
-    if (percentage >= 70) return 'Advanced';
-    if (percentage >= 50) return 'Intermediate';
-    if (percentage >= 25) return 'Beginner';
+    if (percentage >= 80) return 'Advanced';
+    if (percentage >= 60) return 'Intermediate';
+    if (percentage >= 30) return 'Beginner';
     return 'Novice';
   };
 
   const getAIRecommendation = (topic: string, percentage: number, remainingProblems: number, completed: number) => {
-    if (percentage >= 90) {
-      return `🏆 Mastery achieved in ${topic}! You've solved ${completed} problems. Consider mentoring others or tackling advanced variations.`;
-    } else if (percentage >= 70) {
-      return `🚀 Advanced level in ${topic}! ${remainingProblems} more problems to achieve mastery.`;
-    } else if (percentage >= 50) {
-      return `📈 Good progress in ${topic}! Keep practicing - ${remainingProblems} more problems for mastery.`;
-    } else if (percentage >= 25) {
-      return `📚 Building foundation in ${topic}. ${remainingProblems} more problems needed for mastery.`;
+    if (percentage >= 80) {
+      return `🏆 Advanced level in ${topic}! You've solved ${completed} problems. ${remainingProblems} more problems to achieve true mastery.`;
+    } else if (percentage >= 60) {
+      return `🚀 Good progress in ${topic}! ${remainingProblems} more problems to reach advanced level.`;
+    } else if (percentage >= 30) {
+      return `📈 Building foundation in ${topic}. Keep practicing - ${remainingProblems} more problems for mastery.`;
     } else {
       return `🎯 Just started with ${topic}. Focus on easier problems first - ${remainingProblems} problems to master this topic.`;
     }

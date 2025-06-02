@@ -168,7 +168,7 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               <Brain className="h-4 w-4 mr-2" />
-              {isAnalyzing ? 'Analyzing with AI...' : 'Analyze with DeepSeek AI'}
+              {isAnalyzing ? 'Analyzing with AI...' : 'Analyze with AI'}
             </Button>
           </div>
 

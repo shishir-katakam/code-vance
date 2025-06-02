@@ -13,6 +13,20 @@ const corsHeaders = {
 const classifyProblemFallback = (problemName: string, description: string) => {
   const text = (problemName + ' ' + description).toLowerCase();
   
+  // Check for advanced/hard patterns first
+  if (text.includes('optimal') || text.includes('dynamic programming') || text.includes('dp') ||
+      text.includes('graph') || text.includes('shortest path') || text.includes('minimum spanning tree') ||
+      text.includes('maximum flow') || text.includes('segment tree') || text.includes('fenwick') ||
+      text.includes('trie') || text.includes('suffix') || text.includes('lru cache') ||
+      text.includes('n-queens') || text.includes('backtrack') || text.includes('minimax')) {
+    
+    if (text.includes('advanced') || text.includes('complex') || text.includes('optimize') ||
+        text.includes('multiple constraints') || text.includes('time limit') || text.includes('space limit')) {
+      return { topic: 'Dynamic Programming', difficulty: 'Advanced' };
+    }
+    return { topic: 'Dynamic Programming', difficulty: 'Hard' };
+  }
+  
   // Math problems
   if (text.includes('sum') || text.includes('add') || text.includes('subtract') || 
       text.includes('multiply') || text.includes('divide') || text.includes('number') ||
@@ -24,6 +38,9 @@ const classifyProblemFallback = (problemName: string, description: string) => {
   if (text.includes('array') || text.includes('element') || text.includes('index') ||
       text.includes('subarray') || text.includes('matrix') || text.includes('sort') ||
       text.includes('search in array') || text.includes('find element')) {
+    if (text.includes('maximum') || text.includes('minimum') || text.includes('optimize')) {
+      return { topic: 'Arrays', difficulty: 'Hard' };
+    }
     return { topic: 'Arrays', difficulty: 'Medium' };
   }
   
@@ -38,6 +55,9 @@ const classifyProblemFallback = (problemName: string, description: string) => {
   if (text.includes('tree') || text.includes('binary tree') || text.includes('node') ||
       text.includes('root') || text.includes('leaf') || text.includes('traversal') ||
       text.includes('bst') || text.includes('binary search tree')) {
+    if (text.includes('balance') || text.includes('optimize') || text.includes('serialize')) {
+      return { topic: 'Trees', difficulty: 'Hard' };
+    }
     return { topic: 'Trees', difficulty: 'Medium' };
   }
   
@@ -46,13 +66,6 @@ const classifyProblemFallback = (problemName: string, description: string) => {
       text.includes('path') || text.includes('cycle') || text.includes('connected') ||
       text.includes('shortest path') || text.includes('bfs') || text.includes('dfs')) {
     return { topic: 'Graphs', difficulty: 'Hard' };
-  }
-  
-  // Dynamic Programming
-  if (text.includes('dynamic') || text.includes('dp') || text.includes('optimization') ||
-      text.includes('subsequence') || text.includes('fibonacci') || text.includes('knapsack') ||
-      text.includes('maximum') || text.includes('minimum') || text.includes('optimal')) {
-    return { topic: 'Dynamic Programming', difficulty: 'Hard' };
   }
   
   // Linked List problems
@@ -148,11 +161,12 @@ DIFFICULTY RULES:
 - Easy: Basic implementation, simple logic, straightforward approach
 - Medium: Requires algorithmic thinking, moderate complexity, multiple steps
 - Hard: Complex algorithms, advanced data structures, optimization required
+- Advanced: Expert-level problems requiring deep algorithmic knowledge and optimization
 
 Return ONLY a JSON object:
 {
   "topic": "exact topic name from list above",
-  "difficulty": "Easy|Medium|Hard"
+  "difficulty": "Easy|Medium|Hard|Advanced"
 }`
             },
             {
