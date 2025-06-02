@@ -1,35 +1,51 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import LoginForm from '@/components/LoginForm';
 import SignupForm from '@/components/SignupForm';
 import Dashboard from '@/components/Dashboard';
+import Footer from '@/components/Footer';
+import useLocalStorage from '@/hooks/useLocalStorage';
 import { Code2, TrendingUp, Target, Users } from 'lucide-react';
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'signup' | 'dashboard'>('landing');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useLocalStorage<boolean>('codetracker-auth', false);
 
   const handleAuth = () => {
     setIsAuthenticated(true);
     setCurrentView('dashboard');
   };
 
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentView('landing');
+  };
+
   if (isAuthenticated && currentView === 'dashboard') {
-    return <Dashboard />;
+    return <Dashboard onLogout={handleLogout} />;
   }
 
   if (currentView === 'login') {
-    return <LoginForm onSuccess={handleAuth} onSwitchToSignup={() => setCurrentView('signup')} />;
+    return (
+      <div className="min-h-screen flex flex-col">
+        <LoginForm onSuccess={handleAuth} onSwitchToSignup={() => setCurrentView('signup')} />
+        <Footer />
+      </div>
+    );
   }
 
   if (currentView === 'signup') {
-    return <SignupForm onSuccess={handleAuth} onSwitchToLogin={() => setCurrentView('login')} />;
+    return (
+      <div className="min-h-screen flex flex-col">
+        <SignupForm onSuccess={handleAuth} onSwitchToLogin={() => setCurrentView('login')} />
+        <Footer />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex flex-col">
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-md border-b border-white/10">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
@@ -129,6 +145,8 @@ const Index = () => {
           </Button>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };

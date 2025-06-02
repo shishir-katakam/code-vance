@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,6 +7,8 @@ import ProblemList from './ProblemList';
 import ProblemForm from './ProblemForm';
 import TopicProgress from './TopicProgress';
 import ProgressChart from './ProgressChart';
+import About from './About';
+import Footer from './Footer';
 import useLocalStorage from '@/hooks/useLocalStorage';
 
 interface Problem {
@@ -81,7 +82,11 @@ const defaultProblems: Problem[] = [
   }
 ];
 
-const Dashboard = () => {
+interface DashboardProps {
+  onLogout?: () => void;
+}
+
+const Dashboard = ({ onLogout }: DashboardProps) => {
   // Use localStorage for persistent storage
   const [problems, setProblems] = useLocalStorage<Problem[]>('codetracker-problems', defaultProblems);
   const [showForm, setShowForm] = useState(false);
@@ -105,9 +110,14 @@ const Dashboard = () => {
   };
 
   const handleLogout = () => {
-    // Clear all stored data and redirect to landing
+    // Clear all stored data and call parent logout handler
     localStorage.removeItem('codetracker-problems');
-    window.location.reload();
+    localStorage.removeItem('codetracker-auth');
+    if (onLogout) {
+      onLogout();
+    } else {
+      window.location.reload();
+    }
   };
 
   const stats = {
@@ -121,7 +131,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex flex-col">
       {/* Header */}
       <header className="bg-black/20 backdrop-blur-md border-b border-white/10">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
@@ -130,6 +140,7 @@ const Dashboard = () => {
             <h1 className="text-2xl font-bold text-white">CodeTracker</h1>
           </div>
           <div className="flex items-center space-x-4">
+            <About />
             <span className="text-gray-300">Welcome back!</span>
             <Button 
               variant="ghost" 
@@ -143,7 +154,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-6 py-8 flex-1">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="bg-black/40 border-white/10 backdrop-blur-md">
@@ -219,6 +230,8 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Footer />
     </div>
   );
 };
