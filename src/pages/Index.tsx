@@ -1,28 +1,65 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import LoginForm from '@/components/LoginForm';
 import SignupForm from '@/components/SignupForm';
 import Dashboard from '@/components/Dashboard';
 import Footer from '@/components/Footer';
-import useLocalStorage from '@/hooks/useLocalStorage';
+import { supabase } from '@/integrations/supabase/client';
 import { Code2, TrendingUp, Target, Users } from 'lucide-react';
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'signup' | 'dashboard'>('landing');
-  const [isAuthenticated, setIsAuthenticated] = useLocalStorage<boolean>('codetracker-auth', false);
+  const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check initial session
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        setCurrentView('dashboard');
+      }
+      setIsLoading(false);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          setCurrentView('dashboard');
+        } else {
+          setUser(null);
+          setCurrentView('landing');
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleAuth = () => {
-    setIsAuthenticated(true);
-    setCurrentView('dashboard');
+    // This will be handled by the auth state change listener
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
     setCurrentView('landing');
   };
 
-  if (isAuthenticated && currentView === 'dashboard') {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (user && currentView === 'dashboard') {
     return <Dashboard onLogout={handleLogout} />;
   }
 

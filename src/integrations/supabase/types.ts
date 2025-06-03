@@ -20,6 +20,8 @@ export type Database = {
           name: string
           platform: string | null
           topic: string | null
+          url: string | null
+          user_id: string | null
         }
         Insert: {
           completed?: boolean
@@ -31,6 +33,8 @@ export type Database = {
           name: string
           platform?: string | null
           topic?: string | null
+          url?: string | null
+          user_id?: string | null
         }
         Update: {
           completed?: boolean
@@ -42,6 +46,8 @@ export type Database = {
           name?: string
           platform?: string | null
           topic?: string | null
+          url?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

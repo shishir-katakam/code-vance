@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,8 @@ import ProblemForm from './ProblemForm';
 import TopicProgress from './TopicProgress';
 import ProgressChart from './ProgressChart';
 import Footer from './Footer';
-import useLocalStorage from '@/hooks/useLocalStorage';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Problem {
   id: number;
@@ -22,109 +23,191 @@ interface Problem {
   completed: boolean;
   dateAdded: string;
   url?: string;
+  user_id?: string;
 }
-
-// Default sample problems
-const defaultProblems: Problem[] = [
-  {
-    id: 1,
-    name: "Two Sum",
-    description: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-    platform: "LeetCode",
-    topic: "Arrays",
-    language: "Python",
-    difficulty: "Easy",
-    completed: false,
-    dateAdded: "2024-01-15",
-    url: "https://leetcode.com/problems/two-sum/"
-  },
-  {
-    id: 2,
-    name: "Valid Parentheses",
-    description: "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
-    platform: "LeetCode",
-    topic: "Stacks",
-    language: "JavaScript",
-    difficulty: "Easy",
-    completed: true,
-    dateAdded: "2024-01-16",
-    url: "https://leetcode.com/problems/valid-parentheses/"
-  },
-  {
-    id: 3,
-    name: "Merge Two Sorted Lists",
-    description: "You are given the heads of two sorted linked lists list1 and list2. Merge the two lists in a one sorted list.",
-    platform: "LeetCode",
-    topic: "Linked Lists",
-    language: "Java",
-    difficulty: "Easy",
-    completed: false,
-    dateAdded: "2024-01-17",
-    url: "https://leetcode.com/problems/merge-two-sorted-lists/"
-  },
-  {
-    id: 4,
-    name: "Binary Tree Inorder Traversal",
-    description: "Given the root of a binary tree, return the inorder traversal of its nodes' values.",
-    platform: "LeetCode",
-    topic: "Trees",
-    language: "C++",
-    difficulty: "Easy",
-    completed: true,
-    dateAdded: "2024-01-18",
-    url: "https://leetcode.com/problems/binary-tree-inorder-traversal/"
-  },
-  {
-    id: 5,
-    name: "Maximum Subarray",
-    description: "Given an integer array nums, find the contiguous subarray which has the largest sum and return its sum.",
-    platform: "LeetCode",
-    topic: "Dynamic Programming",
-    language: "Python",
-    difficulty: "Medium",
-    completed: false,
-    dateAdded: "2024-01-19",
-    url: "https://leetcode.com/problems/maximum-subarray/"
-  }
-];
 
 interface DashboardProps {
   onLogout?: () => void;
 }
 
 const Dashboard = ({ onLogout }: DashboardProps) => {
-  // Use localStorage for persistent storage
-  const [problems, setProblems] = useLocalStorage<Problem[]>('codetracker-problems', defaultProblems);
+  const [problems, setProblems] = useState<Problem[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const { toast } = useToast();
 
-  const handleAddProblem = (newProblem: Omit<Problem, 'id' | 'dateAdded'>) => {
-    const problem: Problem = {
-      ...newProblem,
-      id: Date.now(), // Simple ID generation
-      dateAdded: new Date().toISOString().split('T')[0]
+  // Check authentication and load user data
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        await loadProblems();
+      } else {
+        // Redirect to login if not authenticated
+        if (onLogout) onLogout();
+      }
+      setIsLoading(false);
     };
-    setProblems([...problems, problem]);
-    setShowForm(false);
-  };
 
-  const handleToggleProblem = (id: number) => {
-    setProblems(problems.map(problem => 
-      problem.id === id 
-        ? { ...problem, completed: !problem.completed }
-        : problem
-    ));
-  };
+    checkAuth();
 
-  const handleLogout = () => {
-    // Clear all stored data and call parent logout handler
-    localStorage.removeItem('codetracker-problems');
-    localStorage.removeItem('codetracker-auth');
-    if (onLogout) {
-      onLogout();
-    } else {
-      window.location.reload();
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          loadProblems();
+        } else {
+          setUser(null);
+          setProblems([]);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [onLogout]);
+
+  const loadProblems = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('problems')
+        .select('*')
+        .order('date_added', { ascending: false });
+
+      if (error) throw error;
+
+      // Convert database format to component format
+      const formattedProblems = data.map(problem => ({
+        id: problem.id,
+        name: problem.name,
+        description: problem.description || '',
+        platform: problem.platform || '',
+        topic: problem.topic || '',
+        language: problem.language || '',
+        difficulty: problem.difficulty || '',
+        completed: problem.completed,
+        dateAdded: problem.date_added.split('T')[0],
+        url: problem.url || '',
+        user_id: problem.user_id
+      }));
+
+      setProblems(formattedProblems);
+    } catch (error) {
+      console.error('Error loading problems:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load problems. Please try again.",
+        variant: "destructive",
+      });
     }
   };
+
+  const handleAddProblem = async (newProblem: Omit<Problem, 'id' | 'dateAdded' | 'user_id'>) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('problems')
+        .insert({
+          name: newProblem.name,
+          description: newProblem.description,
+          platform: newProblem.platform,
+          topic: newProblem.topic,
+          language: newProblem.language,
+          difficulty: newProblem.difficulty,
+          completed: newProblem.completed,
+          url: newProblem.url,
+          user_id: user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add the new problem to local state
+      const formattedProblem = {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        platform: data.platform || '',
+        topic: data.topic || '',
+        language: data.language || '',
+        difficulty: data.difficulty || '',
+        completed: data.completed,
+        dateAdded: data.date_added.split('T')[0],
+        url: data.url || '',
+        user_id: data.user_id
+      };
+
+      setProblems([formattedProblem, ...problems]);
+      setShowForm(false);
+
+      toast({
+        title: "Success",
+        description: "Problem added successfully!",
+      });
+    } catch (error) {
+      console.error('Error adding problem:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add problem. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleProblem = async (id: number) => {
+    const problem = problems.find(p => p.id === id);
+    if (!problem) return;
+
+    try {
+      const { error } = await supabase
+        .from('problems')
+        .update({ completed: !problem.completed })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProblems(problems.map(problem => 
+        problem.id === id 
+          ? { ...problem, completed: !problem.completed }
+          : problem
+      ));
+
+      toast({
+        title: "Success",
+        description: `Problem marked as ${!problem.completed ? 'completed' : 'incomplete'}!`,
+      });
+    } catch (error) {
+      console.error('Error updating problem:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update problem. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      if (onLogout) {
+        onLogout();
+      }
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   const stats = {
     total: problems.length,
@@ -146,7 +229,7 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
             <h1 className="text-2xl font-bold text-white">CodeTracker</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-gray-300">Welcome back!</span>
+            <span className="text-gray-300">Welcome back, {user?.email}!</span>
             <Button 
               variant="ghost" 
               onClick={handleLogout}
