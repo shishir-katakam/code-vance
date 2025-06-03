@@ -32,6 +32,7 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
     topic: '',
     language: '',
     difficulty: '',
+    url: '',
     completed: false
   });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -40,6 +41,8 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
 
   const platforms = ['LeetCode', 'CodeChef', 'GeeksforGeeks', 'HackerRank', 'Codeforces', 'AtCoder'];
   const languages = ['Python', 'JavaScript', 'Java', 'C++', 'C', 'Go', 'Rust', 'TypeScript'];
+  const topics = ['Arrays', 'Strings', 'Linked Lists', 'Trees', 'Graphs', 'Dynamic Programming', 'Greedy', 'Backtracking', 'Stacks', 'Queues', 'Hash Tables', 'Sorting', 'Searching', 'Math', 'Bit Manipulation'];
+  const difficulties = ['Easy', 'Medium', 'Hard'];
 
   const calculateTopicProgress = (topic: string) => {
     const topicProblems = problems.filter(p => p.topic === topic);
@@ -99,8 +102,8 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
     e.preventDefault();
     if (!formData.topic || !formData.difficulty) {
       toast({
-        title: "Missing Analysis",
-        description: "Please analyze the problem with AI first.",
+        title: "Missing Required Fields",
+        description: "Please select topic and difficulty, or analyze with AI first.",
         variant: "destructive",
       });
       return;
@@ -168,7 +171,7 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               <Brain className="h-4 w-4 mr-2" />
-              {isAnalyzing ? 'Analyzing with AI...' : 'Analyze with AI'}
+              {isAnalyzing ? 'Analyzing with AI...' : 'Analyze with AI (Optional)'}
             </Button>
           </div>
 
@@ -226,6 +229,41 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
             </div>
           )}
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="topic" className="text-white">Topic</Label>
+              <Select 
+                value={formData.topic} 
+                onValueChange={(value) => setFormData({ ...formData, topic: value })}
+              >
+                <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                  <SelectValue placeholder="Select topic" />
+                </SelectTrigger>
+                <SelectContent>
+                  {topics.map((topic) => (
+                    <SelectItem key={topic} value={topic}>{topic}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="difficulty" className="text-white">Difficulty</Label>
+              <Select 
+                value={formData.difficulty} 
+                onValueChange={(value) => setFormData({ ...formData, difficulty: value })}
+              >
+                <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                  <SelectValue placeholder="Select difficulty" />
+                </SelectTrigger>
+                <SelectContent>
+                  {difficulties.map((difficulty) => (
+                    <SelectItem key={difficulty} value={difficulty}>{difficulty}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="language" className="text-white">Programming Language</Label>
             <Select onValueChange={(value) => setFormData({ ...formData, language: value })}>
@@ -240,6 +278,18 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="url" className="text-white">Problem URL (Optional)</Label>
+            <Input
+              id="url"
+              type="url"
+              value={formData.url}
+              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+              className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
+              placeholder="https://leetcode.com/problems/two-sum/"
+            />
+          </div>
+
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="ghost" onClick={onCancel} className="text-gray-300">
               Cancel
@@ -247,7 +297,6 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
             <Button 
               type="submit" 
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-              disabled={!formData.topic || !formData.difficulty}
             >
               Add Problem
             </Button>

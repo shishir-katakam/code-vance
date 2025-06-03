@@ -15,6 +15,7 @@ interface Problem {
   difficulty: string;
   completed: boolean;
   dateAdded: string;
+  url?: string;
 }
 
 interface ProblemListProps {
@@ -42,6 +43,12 @@ const ProblemList = ({ problems, onToggle }: ProblemListProps) => {
     }
   };
 
+  const handleLinkClick = (url?: string) => {
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <div className="space-y-4">
       {problems.map((problem) => (
@@ -59,7 +66,12 @@ const ProblemList = ({ problems, onToggle }: ProblemListProps) => {
                     <h3 className={`text-lg font-semibold ${problem.completed ? 'text-gray-400 line-through' : 'text-white'}`}>
                       {problem.name}
                     </h3>
-                    <ExternalLink className="h-4 w-4 text-gray-400 cursor-pointer hover:text-white" />
+                    {problem.url && (
+                      <ExternalLink 
+                        className="h-4 w-4 text-gray-400 cursor-pointer hover:text-white transition-colors" 
+                        onClick={() => handleLinkClick(problem.url)}
+                      />
+                    )}
                   </div>
                   <p className="text-gray-300 mb-3 text-sm">{problem.description}</p>
                   <div className="flex flex-wrap gap-2 mb-3">

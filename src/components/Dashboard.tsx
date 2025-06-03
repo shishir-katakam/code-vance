@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,7 +8,6 @@ import ProblemList from './ProblemList';
 import ProblemForm from './ProblemForm';
 import TopicProgress from './TopicProgress';
 import ProgressChart from './ProgressChart';
-import About from './About';
 import Footer from './Footer';
 import useLocalStorage from '@/hooks/useLocalStorage';
 
@@ -21,6 +21,7 @@ interface Problem {
   difficulty: string;
   completed: boolean;
   dateAdded: string;
+  url?: string;
 }
 
 // Default sample problems
@@ -34,7 +35,8 @@ const defaultProblems: Problem[] = [
     language: "Python",
     difficulty: "Easy",
     completed: false,
-    dateAdded: "2024-01-15"
+    dateAdded: "2024-01-15",
+    url: "https://leetcode.com/problems/two-sum/"
   },
   {
     id: 2,
@@ -45,7 +47,8 @@ const defaultProblems: Problem[] = [
     language: "JavaScript",
     difficulty: "Easy",
     completed: true,
-    dateAdded: "2024-01-16"
+    dateAdded: "2024-01-16",
+    url: "https://leetcode.com/problems/valid-parentheses/"
   },
   {
     id: 3,
@@ -56,7 +59,8 @@ const defaultProblems: Problem[] = [
     language: "Java",
     difficulty: "Easy",
     completed: false,
-    dateAdded: "2024-01-17"
+    dateAdded: "2024-01-17",
+    url: "https://leetcode.com/problems/merge-two-sorted-lists/"
   },
   {
     id: 4,
@@ -67,7 +71,8 @@ const defaultProblems: Problem[] = [
     language: "C++",
     difficulty: "Easy",
     completed: true,
-    dateAdded: "2024-01-18"
+    dateAdded: "2024-01-18",
+    url: "https://leetcode.com/problems/binary-tree-inorder-traversal/"
   },
   {
     id: 5,
@@ -78,7 +83,8 @@ const defaultProblems: Problem[] = [
     language: "Python",
     difficulty: "Medium",
     completed: false,
-    dateAdded: "2024-01-19"
+    dateAdded: "2024-01-19",
+    url: "https://leetcode.com/problems/maximum-subarray/"
   }
 ];
 
@@ -140,7 +146,6 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
             <h1 className="text-2xl font-bold text-white">CodeTracker</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <About />
             <span className="text-gray-300">Welcome back!</span>
             <Button 
               variant="ghost" 
