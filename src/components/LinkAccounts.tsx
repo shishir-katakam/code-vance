@@ -143,7 +143,14 @@ const LinkAccounts = () => {
           body: { username: account.username }
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('LeetCode sync error details:', error);
+          throw new Error(`Sync failed: ${error.message || 'Unknown error'}`);
+        }
+
+        if (!data || !data.problems) {
+          throw new Error('No problem data received from LeetCode');
+        }
 
         // Process and save the problems
         await processLeetCodeProblems(data.problems, account.id);
@@ -170,7 +177,7 @@ const LinkAccounts = () => {
       console.error('Error syncing account:', error);
       toast({
         title: "Sync Failed",
-        description: error.message || `Failed to sync ${account.platform} account.`,
+        description: error.message || `Failed to sync ${account.platform} account. Please check your username and try again.`,
         variant: "destructive",
       });
     } finally {
@@ -179,6 +186,9 @@ const LinkAccounts = () => {
   };
 
   const processLeetCodeProblems = async (problems: any[], accountId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     for (const problem of problems) {
       try {
         // Check if problem already exists
@@ -187,6 +197,7 @@ const LinkAccounts = () => {
           .select('id')
           .eq('platform_problem_id', problem.platform_problem_id)
           .eq('platform', 'LeetCode')
+          .eq('user_id', user.id)
           .single();
 
         if (existing) continue; // Skip if already exists
@@ -195,13 +206,13 @@ const LinkAccounts = () => {
         const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-problem', {
           body: {
             problemName: problem.title,
-            description: problem.content,
+            description: problem.content || problem.title,
             platform: 'LeetCode',
             currentProblems: [] // We'll handle this separately for synced problems
           }
         });
 
-        const topic = analysisData?.topic || (problem.topics[0] || 'Arrays');
+        const topic = analysisData?.topic || (problem.topics && problem.topics[0]) || 'Arrays';
         const difficulty = problem.difficulty || 'Medium';
 
         // Insert the problem
@@ -209,17 +220,18 @@ const LinkAccounts = () => {
           .from('problems')
           .insert({
             name: problem.title,
-            description: problem.content.replace(/<[^>]*>/g, '').substring(0, 500) + '...',
+            description: (problem.content || problem.title).replace(/<[^>]*>/g, '').substring(0, 500) + (problem.content && problem.content.length > 500 ? '...' : ''),
             platform: 'LeetCode',
             topic,
-            language: problem.language,
+            language: problem.language || 'JavaScript',
             difficulty,
             completed: true,
             url: problem.url,
             platform_problem_id: problem.platform_problem_id,
             synced_from_platform: true,
             platform_url: problem.url,
-            solved_date: new Date(parseInt(problem.timestamp) * 1000).toISOString()
+            solved_date: problem.timestamp ? new Date(parseInt(problem.timestamp) * 1000).toISOString() : new Date().toISOString(),
+            user_id: user.id
           });
 
       } catch (error) {
@@ -271,11 +283,16 @@ const LinkAccounts = () => {
                 id="platform"
                 value={newAccount.platform}
                 onChange={(e) => setNewAccount({ ...newAccount, platform: e.target.value })}
-                className="w-full p-2 bg-white/5 border border-white/10 rounded-md text-white"
+                className="w-full p-3 bg-black/60 border border-white/20 rounded-md text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
               >
-                <option value="">Select Platform</option>
+                <option value="" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>Select Platform</option>
                 {platforms.map((platform) => (
-                  <option key={platform.name} value={platform.name}>
+                  <option 
+                    key={platform.name} 
+                    value={platform.name}
+                    style={{ backgroundColor: '#1a1a1a', color: '#fff', padding: '10px' }}
+                  >
                     {platform.icon} {platform.name}
                   </option>
                 ))}
