@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, ExternalLink } from 'lucide-react';
+import { Calendar, ExternalLink, Zap } from 'lucide-react';
 
 interface Problem {
   id: number;
@@ -16,6 +16,8 @@ interface Problem {
   completed: boolean;
   dateAdded: string;
   url?: string;
+  synced_from_platform?: boolean;
+  solved_date?: string;
 }
 
 interface ProblemListProps {
@@ -52,7 +54,7 @@ const ProblemList = ({ problems, onToggle }: ProblemListProps) => {
   return (
     <div className="space-y-4">
       {problems.map((problem) => (
-        <Card key={problem.id} className={`bg-black/40 border-white/10 backdrop-blur-md transition-all ${problem.completed ? 'opacity-75' : ''}`}>
+        <Card key={problem.id} className={`bg-black/40 border-white/10 backdrop-blur-md transition-all ${problem.completed ? 'opacity-75' : ''} ${problem.synced_from_platform ? 'border-purple-500/30' : ''}`}>
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div className="flex items-start space-x-4 flex-1">
@@ -60,12 +62,19 @@ const ProblemList = ({ problems, onToggle }: ProblemListProps) => {
                   checked={problem.completed}
                   onCheckedChange={() => onToggle(problem.id)}
                   className="mt-1"
+                  disabled={problem.synced_from_platform}
                 />
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
                     <h3 className={`text-lg font-semibold ${problem.completed ? 'text-gray-400 line-through' : 'text-white'}`}>
                       {problem.name}
                     </h3>
+                    {problem.synced_from_platform && (
+                      <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
+                        <Zap className="h-3 w-3 mr-1" />
+                        Auto-synced
+                      </Badge>
+                    )}
                     {problem.url && (
                       <ExternalLink 
                         className="h-4 w-4 text-gray-400 cursor-pointer hover:text-white transition-colors" 
@@ -90,7 +99,11 @@ const ProblemList = ({ problems, onToggle }: ProblemListProps) => {
                   </div>
                   <div className="flex items-center text-xs text-gray-400">
                     <Calendar className="h-3 w-3 mr-1" />
-                    Added on {new Date(problem.dateAdded).toLocaleDateString()}
+                    {problem.synced_from_platform && problem.solved_date ? (
+                      <>Solved on {new Date(problem.solved_date).toLocaleDateString()}</>
+                    ) : (
+                      <>Added on {new Date(problem.dateAdded).toLocaleDateString()}</>
+                    )}
                   </div>
                 </div>
               </div>

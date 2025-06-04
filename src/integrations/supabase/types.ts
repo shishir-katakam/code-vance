@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      linked_accounts: {
+        Row: {
+          api_key: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          last_sync: string | null
+          platform: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          api_key?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync?: string | null
+          platform: string
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          api_key?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync?: string | null
+          platform?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       problems: {
         Row: {
           completed: boolean
@@ -19,6 +55,10 @@ export type Database = {
           language: string | null
           name: string
           platform: string | null
+          platform_problem_id: string | null
+          platform_url: string | null
+          solved_date: string | null
+          synced_from_platform: boolean | null
           topic: string | null
           url: string | null
           user_id: string | null
@@ -32,6 +72,10 @@ export type Database = {
           language?: string | null
           name: string
           platform?: string | null
+          platform_problem_id?: string | null
+          platform_url?: string | null
+          solved_date?: string | null
+          synced_from_platform?: boolean | null
           topic?: string | null
           url?: string | null
           user_id?: string | null
@@ -45,6 +89,10 @@ export type Database = {
           language?: string | null
           name?: string
           platform?: string | null
+          platform_problem_id?: string | null
+          platform_url?: string | null
+          solved_date?: string | null
+          synced_from_platform?: boolean | null
           topic?: string | null
           url?: string | null
           user_id?: string | null

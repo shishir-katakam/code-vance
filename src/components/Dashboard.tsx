@@ -1,13 +1,13 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, BarChart3, Target, Code2, LogOut } from 'lucide-react';
+import { Plus, BarChart3, Target, Code2, LogOut, Link } from 'lucide-react';
 import ProblemList from './ProblemList';
 import ProblemForm from './ProblemForm';
 import TopicProgress from './TopicProgress';
 import ProgressChart from './ProgressChart';
+import LinkAccounts from './LinkAccounts';
 import Footer from './Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -280,8 +280,12 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
 
         {/* Main Content */}
         <Tabs defaultValue="problems" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-black/40 border-white/10">
+          <TabsList className="grid w-full grid-cols-4 bg-black/40 border-white/10">
             <TabsTrigger value="problems" className="data-[state=active]:bg-purple-600">Problems</TabsTrigger>
+            <TabsTrigger value="accounts" className="data-[state=active]:bg-purple-600">
+              <Link className="h-4 w-4 mr-2" />
+              Accounts
+            </TabsTrigger>
             <TabsTrigger value="progress" className="data-[state=active]:bg-purple-600">Progress</TabsTrigger>
             <TabsTrigger value="analytics" className="data-[state=active]:bg-purple-600">Analytics</TabsTrigger>
           </TabsList>
@@ -307,6 +311,10 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
             )}
             
             <ProblemList problems={problems} onToggle={handleToggleProblem} />
+          </TabsContent>
+
+          <TabsContent value="accounts">
+            <LinkAccounts />
           </TabsContent>
 
           <TabsContent value="progress">
