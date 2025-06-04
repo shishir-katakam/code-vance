@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Plus, RefreshCw, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -69,7 +70,6 @@ const LinkAccounts = () => {
     }
 
     try {
-      // Get the current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
@@ -138,46 +138,59 @@ const LinkAccounts = () => {
     setSyncingPlatforms(prev => [...prev, account.platform]);
     
     try {
-      if (account.platform === 'LeetCode') {
-        const { data, error } = await supabase.functions.invoke('sync-leetcode', {
-          body: { username: account.username }
-        });
-
-        if (error) {
-          console.error('LeetCode sync error details:', error);
-          throw new Error(`Sync failed: ${error.message || 'Unknown error'}`);
-        }
-
-        if (!data || !data.problems) {
-          throw new Error('No problem data received from LeetCode');
-        }
-
-        // Process and save the problems
-        await processLeetCodeProblems(data.problems, account.id);
-        
-        // Update last sync time
-        await supabase
-          .from('linked_accounts')
-          .update({ last_sync: new Date().toISOString() })
-          .eq('id', account.id);
-
-        toast({
-          title: "Sync Complete",
-          description: `${data.problems.length} problems synced from LeetCode!`,
-        });
-      } else {
-        toast({
-          title: "Coming Soon",
-          description: `${account.platform} sync is not yet implemented.`,
-        });
+      let syncFunction = '';
+      
+      switch (account.platform) {
+        case 'LeetCode':
+          syncFunction = 'sync-leetcode';
+          break;
+        case 'CodeChef':
+          syncFunction = 'sync-codechef';
+          break;
+        case 'HackerRank':
+          syncFunction = 'sync-hackerrank';
+          break;
+        case 'Codeforces':
+          syncFunction = 'sync-codeforces';
+          break;
+        case 'GeeksforGeeks':
+          syncFunction = 'sync-geeksforgeeks';
+          break;
+        default:
+          throw new Error(`${account.platform} sync not implemented`);
       }
+
+      const { data, error } = await supabase.functions.invoke(syncFunction, {
+        body: { username: account.username }
+      });
+
+      if (error) {
+        console.error(`${account.platform} sync error:`, error);
+        throw new Error(`Sync failed: ${error.message || 'Unknown error'}`);
+      }
+
+      if (!data || !data.problems) {
+        throw new Error(`No problem data received from ${account.platform}`);
+      }
+
+      await processProblems(data.problems, account.id, account.platform);
+      
+      await supabase
+        .from('linked_accounts')
+        .update({ last_sync: new Date().toISOString() })
+        .eq('id', account.id);
+
+      toast({
+        title: "Sync Complete",
+        description: `${data.problems.length} problems synced from ${account.platform}!`,
+      });
 
       loadLinkedAccounts();
     } catch (error: any) {
       console.error('Error syncing account:', error);
       toast({
         title: "Sync Failed",
-        description: error.message || `Failed to sync ${account.platform} account. Please check your username and try again.`,
+        description: error.message || `Failed to sync ${account.platform} account.`,
         variant: "destructive",
       });
     } finally {
@@ -185,43 +198,40 @@ const LinkAccounts = () => {
     }
   };
 
-  const processLeetCodeProblems = async (problems: any[], accountId: string) => {
+  const processProblems = async (problems: any[], accountId: string, platform: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     for (const problem of problems) {
       try {
-        // Check if problem already exists
         const { data: existing } = await supabase
           .from('problems')
           .select('id')
           .eq('platform_problem_id', problem.platform_problem_id)
-          .eq('platform', 'LeetCode')
+          .eq('platform', platform)
           .eq('user_id', user.id)
           .single();
 
-        if (existing) continue; // Skip if already exists
+        if (existing) continue;
 
-        // Analyze the problem with AI
-        const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-problem', {
+        const { data: analysisData } = await supabase.functions.invoke('analyze-problem', {
           body: {
             problemName: problem.title,
             description: problem.content || problem.title,
-            platform: 'LeetCode',
-            currentProblems: [] // We'll handle this separately for synced problems
+            platform: platform,
+            currentProblems: []
           }
         });
 
         const topic = analysisData?.topic || (problem.topics && problem.topics[0]) || 'Arrays';
         const difficulty = problem.difficulty || 'Medium';
 
-        // Insert the problem
         await supabase
           .from('problems')
           .insert({
             name: problem.title,
             description: (problem.content || problem.title).replace(/<[^>]*>/g, '').substring(0, 500) + (problem.content && problem.content.length > 500 ? '...' : ''),
-            platform: 'LeetCode',
+            platform: platform,
             topic,
             language: problem.language || 'JavaScript',
             difficulty,
@@ -264,7 +274,7 @@ const LinkAccounts = () => {
         <h2 className="text-2xl font-bold text-white">Linked Accounts</h2>
         <Button 
           onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-purple-600 hover:bg-purple-700"
+          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold"
         >
           <Plus className="h-4 w-4 mr-2" />
           Link Account
@@ -272,47 +282,48 @@ const LinkAccounts = () => {
       </div>
 
       {showAddForm && (
-        <Card className="bg-black/40 border-white/10 backdrop-blur-md">
+        <Card className="bg-black/60 border-white/20 backdrop-blur-md">
           <CardHeader>
             <CardTitle className="text-white">Link New Account</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="platform" className="text-white">Platform</Label>
-              <select
-                id="platform"
-                value={newAccount.platform}
-                onChange={(e) => setNewAccount({ ...newAccount, platform: e.target.value })}
-                className="w-full p-3 bg-black/60 border border-white/20 rounded-md text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
-              >
-                <option value="" style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>Select Platform</option>
-                {platforms.map((platform) => (
-                  <option 
-                    key={platform.name} 
-                    value={platform.name}
-                    style={{ backgroundColor: '#1a1a1a', color: '#fff', padding: '10px' }}
-                  >
-                    {platform.icon} {platform.name}
-                  </option>
-                ))}
-              </select>
+              <Label htmlFor="platform" className="text-white font-medium">Platform</Label>
+              <Select value={newAccount.platform} onValueChange={(value) => setNewAccount({ ...newAccount, platform: value })}>
+                <SelectTrigger className="w-full bg-black/60 border-white/30 text-white">
+                  <SelectValue placeholder="Select Platform" />
+                </SelectTrigger>
+                <SelectContent className="bg-black/90 border-white/20">
+                  {platforms.map((platform) => (
+                    <SelectItem 
+                      key={platform.name} 
+                      value={platform.name}
+                      className="text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span>{platform.icon}</span>
+                        <span>{platform.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-white">Username</Label>
+              <Label htmlFor="username" className="text-white font-medium">Username</Label>
               <Input
                 id="username"
                 value={newAccount.username}
                 onChange={(e) => setNewAccount({ ...newAccount, username: e.target.value })}
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-black/60 border-white/30 text-white placeholder:text-gray-400"
                 placeholder="Your platform username"
               />
             </div>
             <div className="flex justify-end space-x-2">
-              <Button variant="ghost" onClick={() => setShowAddForm(false)} className="text-gray-300">
+              <Button variant="ghost" onClick={() => setShowAddForm(false)} className="text-gray-300 hover:bg-white/10">
                 Cancel
               </Button>
-              <Button onClick={handleAddAccount} className="bg-purple-600 hover:bg-purple-700">
+              <Button onClick={handleAddAccount} className="bg-purple-600 hover:bg-purple-700 text-white">
                 Link Account
               </Button>
             </div>
@@ -322,15 +333,15 @@ const LinkAccounts = () => {
 
       <div className="grid gap-4">
         {linkedAccounts.map((account) => (
-          <Card key={account.id} className="bg-black/40 border-white/10 backdrop-blur-md">
+          <Card key={account.id} className="bg-black/60 border-white/20 backdrop-blur-md">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className={`w-10 h-10 rounded-full ${getPlatformColor(account.platform)} flex items-center justify-center text-white font-bold`}>
+                  <div className={`w-12 h-12 rounded-full ${getPlatformColor(account.platform)} flex items-center justify-center text-white font-bold text-lg`}>
                     {getPlatformIcon(account.platform)}
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold">{account.platform}</h3>
+                    <h3 className="text-white font-semibold text-lg">{account.platform}</h3>
                     <p className="text-gray-300 text-sm">@{account.username}</p>
                     {account.last_sync && (
                       <p className="text-gray-400 text-xs">
@@ -339,7 +350,7 @@ const LinkAccounts = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   <Badge variant={account.is_active ? "default" : "secondary"} className="flex items-center space-x-1">
                     {account.is_active ? (
                       <CheckCircle className="h-3 w-3" />
@@ -353,16 +364,16 @@ const LinkAccounts = () => {
                     size="sm"
                     onClick={() => handleSyncAccount(account)}
                     disabled={syncingPlatforms.includes(account.platform)}
-                    className="text-white border-white/20 hover:bg-white/10"
+                    className="text-white border-white/30 hover:bg-white/10 bg-purple-600/20 font-semibold"
                   >
                     <RefreshCw className={`h-4 w-4 mr-2 ${syncingPlatforms.includes(account.platform) ? 'animate-spin' : ''}`} />
-                    {syncingPlatforms.includes(account.platform) ? 'Syncing...' : 'Sync'}
+                    {syncingPlatforms.includes(account.platform) ? 'Syncing...' : 'Sync Now'}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleRemoveAccount(account.id, account.platform)}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -374,7 +385,7 @@ const LinkAccounts = () => {
       </div>
 
       {linkedAccounts.length === 0 && (
-        <Card className="bg-black/40 border-white/10 backdrop-blur-md">
+        <Card className="bg-black/60 border-white/20 backdrop-blur-md">
           <CardContent className="p-8 text-center">
             <div className="text-gray-400 mb-4">
               <ExternalLink className="h-12 w-12 mx-auto mb-4" />
@@ -383,7 +394,7 @@ const LinkAccounts = () => {
             </div>
             <Button 
               onClick={() => setShowAddForm(true)}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-purple-600 hover:bg-purple-700 text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
               Link Your First Account
