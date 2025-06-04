@@ -1,9 +1,19 @@
-
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Calendar, ExternalLink, Zap, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -188,16 +198,38 @@ const ProblemList = ({ problems, onToggle, onUpdate }: ProblemListProps) => {
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(problem)}
-                    disabled={problem.synced_from_platform || deletingIds.includes(problem.id)}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/20 p-2"
-                    title={problem.synced_from_platform ? "Cannot delete auto-synced problems" : "Delete problem"}
-                  >
-                    <Trash2 className={`h-4 w-4 ${deletingIds.includes(problem.id) ? 'animate-spin' : ''}`} />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={problem.synced_from_platform || deletingIds.includes(problem.id)}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/20 p-2"
+                        title={problem.synced_from_platform ? "Cannot delete auto-synced problems" : "Delete problem"}
+                      >
+                        <Trash2 className={`h-4 w-4 ${deletingIds.includes(problem.id) ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-black/90 border-white/20">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-300">
+                          This action cannot be undone. This will permanently delete the problem "{problem.name}".
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600">
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => handleDelete(problem)}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </CardContent>
