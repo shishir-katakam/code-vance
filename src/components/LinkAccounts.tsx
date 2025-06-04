@@ -69,11 +69,24 @@ const LinkAccounts = () => {
     }
 
     try {
+      // Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to link accounts.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('linked_accounts')
         .insert({
           platform: newAccount.platform,
           username: newAccount.username,
+          user_id: user.id,
         });
 
       if (error) throw error;
