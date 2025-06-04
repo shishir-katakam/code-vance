@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,11 +26,11 @@ const LinkAccounts = () => {
   const { toast } = useToast();
 
   const platforms = [
-    { name: 'LeetCode', icon: '🔗', color: 'bg-orange-500' },
-    { name: 'CodeChef', icon: '👨‍🍳', color: 'bg-purple-500' },
-    { name: 'HackerRank', icon: '🚀', color: 'bg-green-500' },
-    { name: 'Codeforces', icon: '⚡', color: 'bg-blue-500' },
-    { name: 'GeeksforGeeks', icon: '🤓', color: 'bg-yellow-500' },
+    { name: 'LeetCode', icon: '💻', color: 'bg-orange-500', description: 'Sync your LeetCode solutions' },
+    { name: 'CodeChef', icon: '🍳', color: 'bg-purple-500', description: 'Import CodeChef problems' },
+    { name: 'HackerRank', icon: '🚀', color: 'bg-green-500', description: 'Track HackerRank progress' },
+    { name: 'Codeforces', icon: '⚡', color: 'bg-blue-500', description: 'Sync Codeforces submissions' },
+    { name: 'GeeksforGeeks', icon: '🤓', color: 'bg-yellow-500', description: 'Import GFG problems' },
   ];
 
   useEffect(() => {
@@ -60,7 +59,7 @@ const LinkAccounts = () => {
   };
 
   const handleAddAccount = async () => {
-    if (!newAccount.platform || !newAccount.username) {
+    if (!newAccount.platform || !newAccount.username.trim()) {
       toast({
         title: "Missing Information",
         description: "Please select a platform and enter your username.",
@@ -81,24 +80,42 @@ const LinkAccounts = () => {
         return;
       }
 
+      // Check if account already exists
+      const { data: existing } = await supabase
+        .from('linked_accounts')
+        .select('id')
+        .eq('platform', newAccount.platform)
+        .eq('username', newAccount.username.trim())
+        .eq('user_id', user.id)
+        .single();
+
+      if (existing) {
+        toast({
+          title: "Account Already Linked",
+          description: `${newAccount.platform} account @${newAccount.username} is already linked.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('linked_accounts')
         .insert({
           platform: newAccount.platform,
-          username: newAccount.username,
+          username: newAccount.username.trim(),
           user_id: user.id,
         });
 
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: `${newAccount.platform} account linked successfully!`,
+        title: "Account Linked Successfully!",
+        description: `${newAccount.platform} account @${newAccount.username} has been linked. Click "Sync Now" to import your problems.`,
       });
 
       setNewAccount({ platform: '', username: '' });
       setShowAddForm(false);
-      loadLinkedAccounts();
+      await loadLinkedAccounts();
     } catch (error: any) {
       console.error('Error linking account:', error);
       toast({
@@ -138,6 +155,8 @@ const LinkAccounts = () => {
     setSyncingPlatforms(prev => [...prev, account.platform]);
     
     try {
+      console.log(`Starting sync for ${account.platform} with username: ${account.username}`);
+      
       let syncFunction = '';
       
       switch (account.platform) {
@@ -173,24 +192,27 @@ const LinkAccounts = () => {
         throw new Error(`No problem data received from ${account.platform}`);
       }
 
-      await processProblems(data.problems, account.id, account.platform);
+      console.log(`Received ${data.problems.length} problems from ${account.platform}`);
       
+      const syncedCount = await processProblems(data.problems, account.id, account.platform);
+      
+      // Update last sync time
       await supabase
         .from('linked_accounts')
         .update({ last_sync: new Date().toISOString() })
         .eq('id', account.id);
 
       toast({
-        title: "Sync Complete",
-        description: `${data.problems.length} problems synced from ${account.platform}!`,
+        title: "Sync Complete!",
+        description: `Successfully synced ${syncedCount} problems from ${account.platform}!`,
       });
 
-      loadLinkedAccounts();
+      await loadLinkedAccounts();
     } catch (error: any) {
       console.error('Error syncing account:', error);
       toast({
         title: "Sync Failed",
-        description: error.message || `Failed to sync ${account.platform} account.`,
+        description: error.message || `Failed to sync ${account.platform} account. Please check your username and try again.`,
         variant: "destructive",
       });
     } finally {
@@ -200,10 +222,13 @@ const LinkAccounts = () => {
 
   const processProblems = async (problems: any[], accountId: string, platform: string) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) return 0;
+
+    let syncedCount = 0;
 
     for (const problem of problems) {
       try {
+        // Check if problem already exists
         const { data: existing } = await supabase
           .from('problems')
           .select('id')
@@ -212,8 +237,12 @@ const LinkAccounts = () => {
           .eq('user_id', user.id)
           .single();
 
-        if (existing) continue;
+        if (existing) {
+          console.log(`Problem ${problem.title} already exists, skipping`);
+          continue;
+        }
 
+        // Get topic analysis
         const { data: analysisData } = await supabase.functions.invoke('analyze-problem', {
           body: {
             problemName: problem.title,
@@ -226,14 +255,15 @@ const LinkAccounts = () => {
         const topic = analysisData?.topic || (problem.topics && problem.topics[0]) || 'Arrays';
         const difficulty = problem.difficulty || 'Medium';
 
-        await supabase
+        // Insert new problem
+        const { error: insertError } = await supabase
           .from('problems')
           .insert({
             name: problem.title,
             description: (problem.content || problem.title).replace(/<[^>]*>/g, '').substring(0, 500) + (problem.content && problem.content.length > 500 ? '...' : ''),
             platform: platform,
             topic,
-            language: problem.language || 'JavaScript',
+            language: problem.language || 'Python',
             difficulty,
             completed: true,
             url: problem.url,
@@ -244,10 +274,19 @@ const LinkAccounts = () => {
             user_id: user.id
           });
 
+        if (insertError) {
+          console.error(`Error inserting problem ${problem.title}:`, insertError);
+        } else {
+          syncedCount++;
+          console.log(`Successfully synced problem: ${problem.title}`);
+        }
+
       } catch (error) {
         console.error(`Error processing problem ${problem.title}:`, error);
       }
     }
+
+    return syncedCount;
   };
 
   const getPlatformIcon = (platform: string) => {
@@ -290,19 +329,24 @@ const LinkAccounts = () => {
             <div className="space-y-2">
               <Label htmlFor="platform" className="text-white font-medium">Platform</Label>
               <Select value={newAccount.platform} onValueChange={(value) => setNewAccount({ ...newAccount, platform: value })}>
-                <SelectTrigger className="w-full bg-black/60 border-white/30 text-white">
+                <SelectTrigger className="w-full bg-black/60 border-white/30 text-white hover:bg-black/80 focus:bg-black/80">
                   <SelectValue placeholder="Select Platform" />
                 </SelectTrigger>
-                <SelectContent className="bg-black/90 border-white/20">
+                <SelectContent className="bg-black/95 border-white/20 backdrop-blur-md">
                   {platforms.map((platform) => (
                     <SelectItem 
                       key={platform.name} 
                       value={platform.name}
-                      className="text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                      className="text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer py-3"
                     >
-                      <div className="flex items-center space-x-2">
-                        <span>{platform.icon}</span>
-                        <span>{platform.name}</span>
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-8 h-8 rounded-full ${platform.color} flex items-center justify-center text-white font-bold text-sm`}>
+                          {platform.icon}
+                        </div>
+                        <div>
+                          <div className="font-medium">{platform.name}</div>
+                          <div className="text-xs text-gray-400">{platform.description}</div>
+                        </div>
                       </div>
                     </SelectItem>
                   ))}
@@ -315,7 +359,7 @@ const LinkAccounts = () => {
                 id="username"
                 value={newAccount.username}
                 onChange={(e) => setNewAccount({ ...newAccount, username: e.target.value })}
-                className="bg-black/60 border-white/30 text-white placeholder:text-gray-400"
+                className="bg-black/60 border-white/30 text-white placeholder:text-gray-400 focus:bg-black/80"
                 placeholder="Your platform username"
               />
             </div>
@@ -323,7 +367,7 @@ const LinkAccounts = () => {
               <Button variant="ghost" onClick={() => setShowAddForm(false)} className="text-gray-300 hover:bg-white/10">
                 Cancel
               </Button>
-              <Button onClick={handleAddAccount} className="bg-purple-600 hover:bg-purple-700 text-white">
+              <Button onClick={handleAddAccount} className="bg-purple-600 hover:bg-purple-700 text-white font-semibold">
                 Link Account
               </Button>
             </div>
@@ -333,12 +377,12 @@ const LinkAccounts = () => {
 
       <div className="grid gap-4">
         {linkedAccounts.map((account) => (
-          <Card key={account.id} className="bg-black/60 border-white/20 backdrop-blur-md">
+          <Card key={account.id} className="bg-black/60 border-white/20 backdrop-blur-md hover:bg-black/70 transition-all">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 rounded-full ${getPlatformColor(account.platform)} flex items-center justify-center text-white font-bold text-lg`}>
-                    {getPlatformIcon(account.platform)}
+                  <div className={`w-12 h-12 rounded-full ${platforms.find(p => p.name === account.platform)?.color || 'bg-gray-500'} flex items-center justify-center text-white font-bold text-lg`}>
+                    {platforms.find(p => p.name === account.platform)?.icon || '🔗'}
                   </div>
                   <div>
                     <h3 className="text-white font-semibold text-lg">{account.platform}</h3>
@@ -364,7 +408,7 @@ const LinkAccounts = () => {
                     size="sm"
                     onClick={() => handleSyncAccount(account)}
                     disabled={syncingPlatforms.includes(account.platform)}
-                    className="text-white border-white/30 hover:bg-white/10 bg-purple-600/20 font-semibold"
+                    className="text-white border-purple-500/50 hover:bg-purple-600/20 bg-purple-600/10 font-semibold hover:border-purple-400"
                   >
                     <RefreshCw className={`h-4 w-4 mr-2 ${syncingPlatforms.includes(account.platform) ? 'animate-spin' : ''}`} />
                     {syncingPlatforms.includes(account.platform) ? 'Syncing...' : 'Sync Now'}
