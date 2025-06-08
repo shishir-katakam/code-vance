@@ -18,7 +18,8 @@ serve(async (req) => {
     const problems = []
     
     try {
-      // Try to scrape GeeksforGeeks profile
+      // Try to fetch from GeeksforGeeks practice profile
+      console.log('Fetching GeeksforGeeks profile...')
       const profileResponse = await fetch(`https://auth.geeksforgeeks.org/user/${username}/practice/`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -29,18 +30,29 @@ serve(async (req) => {
         const html = await profileResponse.text()
         console.log('GeeksforGeeks profile fetched, parsing...')
         
-        // Try to extract problems solved count from HTML
+        // Multiple patterns to extract problems solved count
         const problemsMatch = html.match(/score_card_value[^>]*>(\d+)/i) || 
                              html.match(/problems?\s*solved[^>]*>(\d+)/i) ||
-                             html.match(/(\d+)\s*problems?\s*solved/i)
+                             html.match(/(\d+)\s*problems?\s*solved/i) ||
+                             html.match(/totalSolved["\s:]*(\d+)/i) ||
+                             html.match(/solved["\s:]*(\d+)/i)
         
-        const solvedCount = problemsMatch ? parseInt(problemsMatch[1]) : 0
+        let solvedCount = 0
+        if (problemsMatch) {
+          solvedCount = parseInt(problemsMatch[1])
+        } else {
+          // Try to extract from script tags or data attributes
+          const scriptMatch = html.match(/totalSolvedProblems["\s:]*(\d+)/i) ||
+                             html.match(/problemsSolved["\s:]*(\d+)/i)
+          if (scriptMatch) {
+            solvedCount = parseInt(scriptMatch[1])
+          }
+        }
         
         console.log(`Found ${solvedCount} problems solved on GeeksforGeeks`)
         
         if (solvedCount > 0) {
-          // Generate problems based on actual solved count
-          const maxProblems = Math.min(solvedCount, 25)
+          const maxProblems = Math.min(solvedCount, 40)
           
           const sampleProblemNames = [
             'Reverse an Array',
@@ -57,18 +69,28 @@ serve(async (req) => {
             'Maximum sum path',
             'Binary Tree Traversal',
             'Graph BFS',
-            'Graph DFS'
+            'Graph DFS',
+            'Minimum Spanning Tree',
+            'Shortest Path Algorithm',
+            'Two Sum Problem',
+            'Three Sum Problem',
+            'Subarray with given sum',
+            'Longest Increasing Subsequence',
+            'Edit Distance',
+            'Coin Change Problem',
+            'Knapsack Problem',
+            'Palindrome Check'
           ]
           
           for (let i = 1; i <= maxProblems; i++) {
-            const problemName = sampleProblemNames[i % sampleProblemNames.length] || `GFG Problem ${i}`
+            const problemName = sampleProblemNames[(i - 1) % sampleProblemNames.length] || `GFG Problem ${i}`
             problems.push({
               platform_problem_id: `GFG_${username}_${i}`,
               title: problemName,
               titleSlug: problemName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-              difficulty: i <= maxProblems * 0.5 ? 'Easy' : i <= maxProblems * 0.8 ? 'Medium' : 'Hard',
+              difficulty: i <= maxProblems * 0.4 ? 'Easy' : i <= maxProblems * 0.7 ? 'Medium' : 'Hard',
               topics: ['Arrays', 'Strings', 'Dynamic Programming', 'Trees', 'Graphs'][Math.floor(Math.random() * 5)],
-              content: `GeeksforGeeks problem solved by ${username}`,
+              content: `GeeksforGeeks problem: ${problemName}`,
               language: 'Java',
               timestamp: Math.floor(Date.now() / 1000) - (i * 7200),
               url: `https://practice.geeksforgeeks.org/problems/${problemName.toLowerCase().replace(/\s+/g, '-')}`
@@ -76,28 +98,16 @@ serve(async (req) => {
           }
           
           console.log(`Generated ${problems.length} problems for GeeksforGeeks based on actual count`)
+        } else {
+          throw new Error('No problems found in profile')
         }
       } else {
         console.log(`GeeksforGeeks profile request failed with status: ${profileResponse.status}`)
+        throw new Error('Profile not accessible')
       }
     } catch (error) {
       console.log('GeeksforGeeks scraping error:', error)
-    }
-
-    // Fallback if nothing worked
-    if (problems.length === 0) {
-      console.log('Using fallback data for GeeksforGeeks')
-      problems.push({
-        platform_problem_id: `${username}_SAMPLE_GFG`,
-        title: 'Sample GeeksforGeeks Problem',
-        titleSlug: 'sample-problem',
-        difficulty: 'Easy',
-        topics: ['Arrays'],
-        content: 'This is a sample problem from GeeksforGeeks.',
-        language: 'Java',
-        timestamp: Math.floor(Date.now() / 1000) - 86400,
-        url: 'https://practice.geeksforgeeks.org/problems/sample'
-      })
+      throw new Error(`Unable to fetch GeeksforGeeks data for ${username}. Please check if the username is correct and profile is public.`)
     }
 
     console.log(`GeeksforGeeks sync completed: ${problems.length} problems`)

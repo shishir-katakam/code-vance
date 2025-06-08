@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +27,7 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAccount, setNewAccount] = useState({ platform: '', username: '' });
   const [syncingPlatforms, setSyncingPlatforms] = useState<string[]>([]);
-  const [syncProgress, setSyncProgress] = useState<{[key: string]: { current: number, total: number, message: string }}>({});
+  const [syncProgress, setSyncProgress] = useState<{[key: string]: number}>({});
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -133,12 +132,14 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
     }
   };
 
-  const handleRemoveAccount = async (id: string, platform: string) => {
+  const handleRemoveAccount = async (id: string, platform: string, username: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // First, delete all problems synced from this platform for this user
+      console.log(`Removing account: ${platform} - ${username}`);
+
+      // First, delete all problems synced from this specific platform and user
       const { error: deleteProblemsError } = await supabase
         .from('problems')
         .delete()
@@ -151,6 +152,8 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
         throw new Error('Failed to remove synced problems');
       }
 
+      console.log(`Deleted problems for platform: ${platform}`);
+
       // Then delete the linked account
       const { error } = await supabase
         .from('linked_accounts')
@@ -161,11 +164,16 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
 
       toast({
         title: "Success",
-        description: `${platform} account and all synced problems removed successfully!`,
+        description: `${platform} account (@${username}) and all synced problems removed successfully!`,
       });
 
-      loadLinkedAccounts();
-      if (onProblemsUpdate) onProblemsUpdate();
+      await loadLinkedAccounts();
+      
+      // Trigger immediate problems update
+      if (onProblemsUpdate) {
+        console.log('Triggering problems update after account removal');
+        onProblemsUpdate();
+      }
     } catch (error) {
       console.error('Error removing account:', error);
       toast({
@@ -178,10 +186,7 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
 
   const handleSyncAccount = async (account: LinkedAccount) => {
     setSyncingPlatforms(prev => [...prev, account.platform]);
-    setSyncProgress(prev => ({ 
-      ...prev, 
-      [account.platform]: { current: 0, total: 0, message: 'Starting sync...' }
-    }));
+    setSyncProgress(prev => ({ ...prev, [account.platform]: 0 }));
     
     try {
       console.log(`Starting sync for ${account.platform} with username: ${account.username}`);
@@ -189,13 +194,8 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Update progress: Clearing existing problems
-      setSyncProgress(prev => ({ 
-        ...prev, 
-        [account.platform]: { current: 0, total: 0, message: 'Clearing existing problems...' }
-      }));
-
       // Before syncing new data, remove all existing synced problems for this platform and user
+      console.log(`Clearing existing problems for ${account.platform}`);
       const { error: deleteError } = await supabase
         .from('problems')
         .delete()
@@ -208,7 +208,10 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
       }
 
       // Trigger problems update immediately after clearing
-      if (onProblemsUpdate) onProblemsUpdate();
+      if (onProblemsUpdate) {
+        console.log('Triggering problems update after clearing');
+        onProblemsUpdate();
+      }
 
       let syncFunction = '';
       
@@ -232,12 +235,7 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
           throw new Error(`${account.platform} sync not implemented`);
       }
 
-      // Update progress: Fetching data
-      setSyncProgress(prev => ({ 
-        ...prev, 
-        [account.platform]: { current: 0, total: 0, message: 'Fetching problems from platform...' }
-      }));
-
+      console.log(`Calling ${syncFunction} for ${account.username}`);
       const { data, error } = await supabase.functions.invoke(syncFunction, {
         body: { username: account.username }
       });
@@ -253,12 +251,6 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
 
       console.log(`Received ${data.problems.length} problems from ${account.platform}`);
       
-      // Update progress: Processing problems
-      setSyncProgress(prev => ({ 
-        ...prev, 
-        [account.platform]: { current: 0, total: data.problems.length, message: 'Processing problems...' }
-      }));
-
       const syncedCount = await processProblems(data.problems, account.id, account.platform);
       
       // Update last sync time
@@ -273,7 +265,12 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
       });
 
       await loadLinkedAccounts();
-      if (onProblemsUpdate) onProblemsUpdate();
+      
+      // Final problems update
+      if (onProblemsUpdate) {
+        console.log('Final problems update after sync completion');
+        onProblemsUpdate();
+      }
     } catch (error: any) {
       console.error('Error syncing account:', error);
       toast({
@@ -297,78 +294,71 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
 
     let syncedCount = 0;
     const total = problems.length;
-    const batchSize = 5; // Process in smaller batches for better performance
 
-    for (let i = 0; i < problems.length; i += batchSize) {
-      const batch = problems.slice(i, Math.min(i + batchSize, problems.length));
-      
-      // Update progress
-      setSyncProgress(prev => ({ 
-        ...prev, 
-        [platform]: { 
-          current: Math.min(i + batchSize, total), 
-          total, 
-          message: `Processing ${Math.min(i + batchSize, total)}/${total} problems...` 
+    for (let i = 0; i < problems.length; i++) {
+      const problem = problems[i];
+      try {
+        // Update progress in real-time
+        const progressPercent = Math.round(((i + 1) / total) * 100);
+        setSyncProgress(prev => ({ ...prev, [platform]: progressPercent }));
+
+        // Check if problem already exists
+        const { data: existing } = await supabase
+          .from('problems')
+          .select('id')
+          .eq('platform_problem_id', problem.platform_problem_id)
+          .eq('platform', platform)
+          .eq('user_id', user.id)
+          .single();
+
+        if (existing) {
+          console.log(`Problem ${problem.title} already exists, skipping`);
+          continue;
         }
-      }));
 
-      // Process batch
-      for (const problem of batch) {
-        try {
-          // Check if problem already exists
-          const { data: existing } = await supabase
-            .from('problems')
-            .select('id')
-            .eq('platform_problem_id', problem.platform_problem_id)
-            .eq('platform', platform)
-            .eq('user_id', user.id)
-            .single();
+        // Get topic analysis (simplified for speed)
+        const topic = problem.topics?.[0] || 'Arrays';
+        const difficulty = problem.difficulty || 'Medium';
 
-          if (existing) {
-            console.log(`Problem ${problem.title} already exists, skipping`);
-            continue;
+        // Insert new problem
+        const { error: insertError } = await supabase
+          .from('problems')
+          .insert({
+            name: problem.title,
+            description: (problem.content || problem.title).replace(/<[^>]*>/g, '').substring(0, 500) + (problem.content && problem.content.length > 500 ? '...' : ''),
+            platform: platform,
+            topic,
+            language: problem.language || 'Python',
+            difficulty,
+            completed: true,
+            url: problem.url,
+            platform_problem_id: problem.platform_problem_id,
+            synced_from_platform: true,
+            platform_url: problem.url,
+            solved_date: problem.timestamp ? new Date(parseInt(problem.timestamp) * 1000).toISOString() : new Date().toISOString(),
+            user_id: user.id
+          });
+
+        if (insertError) {
+          console.error(`Error inserting problem ${problem.title}:`, insertError);
+        } else {
+          syncedCount++;
+          console.log(`Successfully synced problem: ${problem.title}`);
+          
+          // Trigger UI update after every few problems for real-time feedback
+          if (syncedCount % 5 === 0 && onProblemsUpdate) {
+            onProblemsUpdate();
           }
-
-          // Get topic analysis (simplified for speed)
-          const topic = problem.topics?.[0] || 'Arrays';
-          const difficulty = problem.difficulty || 'Medium';
-
-          // Insert new problem
-          const { error: insertError } = await supabase
-            .from('problems')
-            .insert({
-              name: problem.title,
-              description: (problem.content || problem.title).replace(/<[^>]*>/g, '').substring(0, 500) + (problem.content && problem.content.length > 500 ? '...' : ''),
-              platform: platform,
-              topic,
-              language: problem.language || 'Python',
-              difficulty,
-              completed: true,
-              url: problem.url,
-              platform_problem_id: problem.platform_problem_id,
-              synced_from_platform: true,
-              platform_url: problem.url,
-              solved_date: problem.timestamp ? new Date(parseInt(problem.timestamp) * 1000).toISOString() : new Date().toISOString(),
-              user_id: user.id
-            });
-
-          if (insertError) {
-            console.error(`Error inserting problem ${problem.title}:`, insertError);
-          } else {
-            syncedCount++;
-            console.log(`Successfully synced problem: ${problem.title}`);
-          }
-
-        } catch (error) {
-          console.error(`Error processing problem ${problem.title}:`, error);
         }
+
+      } catch (error) {
+        console.error(`Error processing problem ${problem.title}:`, error);
       }
+    }
 
-      // Trigger UI update after each batch
-      if (onProblemsUpdate) onProblemsUpdate();
-      
-      // Small delay to prevent overwhelming the UI
-      await new Promise(resolve => setTimeout(resolve, 50));
+    // Final update
+    if (onProblemsUpdate) {
+      onProblemsUpdate();
     }
 
     return syncedCount;
@@ -477,15 +467,15 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
                         Last synced: {new Date(account.last_sync).toLocaleDateString()}
                       </p>
                     )}
-                    {syncProgress[account.platform] && (
-                      <div className="mt-2 space-y-1">
-                        <p className="text-blue-400 text-xs">{syncProgress[account.platform].message}</p>
-                        {syncProgress[account.platform].total > 0 && (
-                          <Progress 
-                            value={(syncProgress[account.platform].current / syncProgress[account.platform].total) * 100} 
-                            className="w-48 h-2"
+                    {syncProgress[account.platform] !== undefined && (
+                      <div className="mt-2">
+                        <p className="text-blue-400 text-xs">Syncing... {syncProgress[account.platform]}%</p>
+                        <div className="w-48 h-2 bg-gray-700 rounded-full mt-1">
+                          <div 
+                            className="h-2 bg-blue-500 rounded-full transition-all duration-300"
+                            style={{ width: `${syncProgress[account.platform]}%` }}
                           />
-                        )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -512,7 +502,7 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleRemoveAccount(account.id, account.platform)}
+                    onClick={() => handleRemoveAccount(account.id, account.platform, account.username)}
                     className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
                   >
                     <Trash2 className="h-4 w-4" />

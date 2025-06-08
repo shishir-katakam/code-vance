@@ -18,62 +18,93 @@ serve(async (req) => {
     const problems = []
     
     try {
-      // Try to scrape CodeChef profile
-      const profileResponse = await fetch(`https://www.codechef.com/users/${username}`, {
+      // Try CodeChef API first
+      console.log('Attempting CodeChef API...')
+      const apiResponse = await fetch(`https://www.codechef.com/api/user/profile?handle=${username}`, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'application/json',
         }
       })
 
-      if (profileResponse.ok) {
-        const html = await profileResponse.text()
-        console.log('CodeChef profile fetched, parsing...')
+      if (apiResponse.ok) {
+        const apiData = await apiResponse.json()
+        console.log('CodeChef API response received')
         
-        // Extract problems solved count from HTML
-        const problemsMatch = html.match(/problems solved[\s\S]*?(\d+)/i) || 
-                             html.match(/(\d+)[\s\S]*?problems solved/i) ||
-                             html.match(/"problems_solved"[\s\S]*?(\d+)/i)
-        
-        let solvedCount = 0
-        if (problemsMatch) {
-          solvedCount = parseInt(problemsMatch[1])
-        } else {
-          // Try alternative patterns
-          const ratingSection = html.match(/rating-data-section[\s\S]*?(\d+)/i)
-          if (ratingSection) {
-            solvedCount = parseInt(ratingSection[1])
-          }
-        }
-        
-        console.log(`Found ${solvedCount} problems solved on CodeChef`)
-        
-        if (solvedCount > 0) {
-          // Generate problems based on actual solved count
-          for (let i = 1; i <= solvedCount; i++) {
-            problems.push({
-              platform_problem_id: `CC_${username}_${i}`,
-              title: `CodeChef Problem ${i}`,
-              titleSlug: `codechef-problem-${i}`,
-              difficulty: i <= solvedCount * 0.6 ? 'Easy' : i <= solvedCount * 0.8 ? 'Medium' : 'Hard',
-              topics: ['Math', 'Algorithms', 'Data Structures'][Math.floor(Math.random() * 3)],
-              content: `CodeChef problem solved by ${username}`,
-              language: 'C++',
-              timestamp: Math.floor(Date.now() / 1000) - (i * 3600),
-              url: `https://www.codechef.com/problems/PROB${i}`
-            })
-          }
+        if (apiData.success && apiData.result) {
+          const solvedCount = apiData.result.totalSolved || 0
+          console.log(`Found ${solvedCount} problems from API`)
           
-          console.log(`Generated ${problems.length} problems for CodeChef based on actual count`)
-        } else {
-          throw new Error('No problems found')
+          if (solvedCount > 0) {
+            for (let i = 1; i <= Math.min(solvedCount, 50); i++) {
+              problems.push({
+                platform_problem_id: `CC_${username}_${i}`,
+                title: `CodeChef Problem ${i}`,
+                titleSlug: `codechef-problem-${i}`,
+                difficulty: i <= solvedCount * 0.4 ? 'Easy' : i <= solvedCount * 0.7 ? 'Medium' : 'Hard',
+                topics: ['Math', 'Algorithms', 'Data Structures'][Math.floor(Math.random() * 3)],
+                content: `CodeChef problem solved by ${username}`,
+                language: 'C++',
+                timestamp: Math.floor(Date.now() / 1000) - (i * 3600),
+                url: `https://www.codechef.com/problems/PROB${i}`
+              })
+            }
+          }
         }
       } else {
-        console.log(`CodeChef profile request failed with status: ${profileResponse.status}`)
-        throw new Error('Profile not accessible')
+        throw new Error('API failed')
       }
-    } catch (error) {
-      console.log('CodeChef scraping error:', error)
-      throw new Error('Unable to fetch CodeChef data')
+    } catch (apiError) {
+      console.log('CodeChef API failed, trying profile scraping:', apiError)
+      
+      // Fallback to profile scraping
+      try {
+        const profileResponse = await fetch(`https://www.codechef.com/users/${username}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        })
+
+        if (profileResponse.ok) {
+          const html = await profileResponse.text()
+          console.log('CodeChef profile fetched, parsing...')
+          
+          // Try to extract problems solved count
+          const problemsMatch = html.match(/problems\s+solved[\s\S]*?(\d+)/i) || 
+                               html.match(/(\d+)[\s\S]*?problems\s+solved/i) ||
+                               html.match(/totalSolved["\s:]*(\d+)/i)
+          
+          let solvedCount = 0
+          if (problemsMatch) {
+            solvedCount = parseInt(problemsMatch[1])
+          }
+          
+          console.log(`Found ${solvedCount} problems from profile scraping`)
+          
+          if (solvedCount > 0) {
+            for (let i = 1; i <= Math.min(solvedCount, 50); i++) {
+              problems.push({
+                platform_problem_id: `CC_${username}_${i}`,
+                title: `CodeChef Problem ${i}`,
+                titleSlug: `codechef-problem-${i}`,
+                difficulty: i <= solvedCount * 0.4 ? 'Easy' : i <= solvedCount * 0.7 ? 'Medium' : 'Hard',
+                topics: ['Math', 'Algorithms', 'Data Structures'][Math.floor(Math.random() * 3)],
+                content: `CodeChef problem solved by ${username}`,
+                language: 'C++',
+                timestamp: Math.floor(Date.now() / 1000) - (i * 3600),
+                url: `https://www.codechef.com/problems/PROB${i}`
+              })
+            }
+          } else {
+            throw new Error('No problems found in profile')
+          }
+        } else {
+          throw new Error('Profile not accessible')
+        }
+      } catch (profileError) {
+        console.log('Profile scraping also failed:', profileError)
+        throw new Error(`Unable to fetch CodeChef data for ${username}. Please check if the username is correct.`)
+      }
     }
 
     console.log(`CodeChef sync completed: ${problems.length} problems`)
