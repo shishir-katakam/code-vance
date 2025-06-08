@@ -128,6 +128,23 @@ const LinkAccounts = () => {
 
   const handleRemoveAccount = async (id: string, platform: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // First, delete all problems synced from this platform for this user
+      const { error: deleteProblemsError } = await supabase
+        .from('problems')
+        .delete()
+        .eq('platform', platform)
+        .eq('user_id', user.id)
+        .eq('synced_from_platform', true);
+
+      if (deleteProblemsError) {
+        console.error('Error deleting problems:', deleteProblemsError);
+        throw new Error('Failed to remove synced problems');
+      }
+
+      // Then delete the linked account
       const { error } = await supabase
         .from('linked_accounts')
         .delete()
@@ -137,7 +154,7 @@ const LinkAccounts = () => {
 
       toast({
         title: "Success",
-        description: `${platform} account removed successfully!`,
+        description: `${platform} account and all synced problems removed successfully!`,
       });
 
       loadLinkedAccounts();
@@ -157,6 +174,22 @@ const LinkAccounts = () => {
     try {
       console.log(`Starting sync for ${account.platform} with username: ${account.username}`);
       
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Before syncing new data, remove all existing synced problems for this platform and user
+      const { error: deleteError } = await supabase
+        .from('problems')
+        .delete()
+        .eq('platform', account.platform)
+        .eq('user_id', user.id)
+        .eq('synced_from_platform', true);
+
+      if (deleteError) {
+        console.error('Error clearing existing problems:', deleteError);
+        // Continue with sync even if deletion fails
+      }
+
       let syncFunction = '';
       
       switch (account.platform) {
