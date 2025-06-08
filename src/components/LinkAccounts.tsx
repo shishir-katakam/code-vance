@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,7 @@ import { Trash2, Plus, RefreshCw, CheckCircle, XCircle, ExternalLink } from 'luc
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
 
 interface LinkedAccount {
   id: string;
@@ -17,11 +19,16 @@ interface LinkedAccount {
   last_sync: string | null;
 }
 
-const LinkAccounts = () => {
+interface LinkAccountsProps {
+  onProblemsUpdate?: () => void;
+}
+
+const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAccount, setNewAccount] = useState({ platform: '', username: '' });
   const [syncingPlatforms, setSyncingPlatforms] = useState<string[]>([]);
+  const [syncProgress, setSyncProgress] = useState<{[key: string]: { current: number, total: number, message: string }}>({});
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -158,6 +165,7 @@ const LinkAccounts = () => {
       });
 
       loadLinkedAccounts();
+      if (onProblemsUpdate) onProblemsUpdate();
     } catch (error) {
       console.error('Error removing account:', error);
       toast({
@@ -170,12 +178,22 @@ const LinkAccounts = () => {
 
   const handleSyncAccount = async (account: LinkedAccount) => {
     setSyncingPlatforms(prev => [...prev, account.platform]);
+    setSyncProgress(prev => ({ 
+      ...prev, 
+      [account.platform]: { current: 0, total: 0, message: 'Starting sync...' }
+    }));
     
     try {
       console.log(`Starting sync for ${account.platform} with username: ${account.username}`);
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
+
+      // Update progress: Clearing existing problems
+      setSyncProgress(prev => ({ 
+        ...prev, 
+        [account.platform]: { current: 0, total: 0, message: 'Clearing existing problems...' }
+      }));
 
       // Before syncing new data, remove all existing synced problems for this platform and user
       const { error: deleteError } = await supabase
@@ -187,8 +205,10 @@ const LinkAccounts = () => {
 
       if (deleteError) {
         console.error('Error clearing existing problems:', deleteError);
-        // Continue with sync even if deletion fails
       }
+
+      // Trigger problems update immediately after clearing
+      if (onProblemsUpdate) onProblemsUpdate();
 
       let syncFunction = '';
       
@@ -212,6 +232,12 @@ const LinkAccounts = () => {
           throw new Error(`${account.platform} sync not implemented`);
       }
 
+      // Update progress: Fetching data
+      setSyncProgress(prev => ({ 
+        ...prev, 
+        [account.platform]: { current: 0, total: 0, message: 'Fetching problems from platform...' }
+      }));
+
       const { data, error } = await supabase.functions.invoke(syncFunction, {
         body: { username: account.username }
       });
@@ -227,6 +253,12 @@ const LinkAccounts = () => {
 
       console.log(`Received ${data.problems.length} problems from ${account.platform}`);
       
+      // Update progress: Processing problems
+      setSyncProgress(prev => ({ 
+        ...prev, 
+        [account.platform]: { current: 0, total: data.problems.length, message: 'Processing problems...' }
+      }));
+
       const syncedCount = await processProblems(data.problems, account.id, account.platform);
       
       // Update last sync time
@@ -241,6 +273,7 @@ const LinkAccounts = () => {
       });
 
       await loadLinkedAccounts();
+      if (onProblemsUpdate) onProblemsUpdate();
     } catch (error: any) {
       console.error('Error syncing account:', error);
       toast({
@@ -250,6 +283,11 @@ const LinkAccounts = () => {
       });
     } finally {
       setSyncingPlatforms(prev => prev.filter(p => p !== account.platform));
+      setSyncProgress(prev => {
+        const newProgress = { ...prev };
+        delete newProgress[account.platform];
+        return newProgress;
+      });
     }
   };
 
@@ -258,65 +296,79 @@ const LinkAccounts = () => {
     if (!user) return 0;
 
     let syncedCount = 0;
+    const total = problems.length;
+    const batchSize = 5; // Process in smaller batches for better performance
 
-    for (const problem of problems) {
-      try {
-        // Check if problem already exists
-        const { data: existing } = await supabase
-          .from('problems')
-          .select('id')
-          .eq('platform_problem_id', problem.platform_problem_id)
-          .eq('platform', platform)
-          .eq('user_id', user.id)
-          .single();
-
-        if (existing) {
-          console.log(`Problem ${problem.title} already exists, skipping`);
-          continue;
+    for (let i = 0; i < problems.length; i += batchSize) {
+      const batch = problems.slice(i, Math.min(i + batchSize, problems.length));
+      
+      // Update progress
+      setSyncProgress(prev => ({ 
+        ...prev, 
+        [platform]: { 
+          current: Math.min(i + batchSize, total), 
+          total, 
+          message: `Processing ${Math.min(i + batchSize, total)}/${total} problems...` 
         }
+      }));
 
-        // Get topic analysis
-        const { data: analysisData } = await supabase.functions.invoke('analyze-problem', {
-          body: {
-            problemName: problem.title,
-            description: problem.content || problem.title,
-            platform: platform,
-            currentProblems: []
+      // Process batch
+      for (const problem of batch) {
+        try {
+          // Check if problem already exists
+          const { data: existing } = await supabase
+            .from('problems')
+            .select('id')
+            .eq('platform_problem_id', problem.platform_problem_id)
+            .eq('platform', platform)
+            .eq('user_id', user.id)
+            .single();
+
+          if (existing) {
+            console.log(`Problem ${problem.title} already exists, skipping`);
+            continue;
           }
-        });
 
-        const topic = analysisData?.topic || (problem.topics && problem.topics[0]) || 'Arrays';
-        const difficulty = problem.difficulty || 'Medium';
+          // Get topic analysis (simplified for speed)
+          const topic = problem.topics?.[0] || 'Arrays';
+          const difficulty = problem.difficulty || 'Medium';
 
-        // Insert new problem
-        const { error: insertError } = await supabase
-          .from('problems')
-          .insert({
-            name: problem.title,
-            description: (problem.content || problem.title).replace(/<[^>]*>/g, '').substring(0, 500) + (problem.content && problem.content.length > 500 ? '...' : ''),
-            platform: platform,
-            topic,
-            language: problem.language || 'Python',
-            difficulty,
-            completed: true,
-            url: problem.url,
-            platform_problem_id: problem.platform_problem_id,
-            synced_from_platform: true,
-            platform_url: problem.url,
-            solved_date: problem.timestamp ? new Date(parseInt(problem.timestamp) * 1000).toISOString() : new Date().toISOString(),
-            user_id: user.id
-          });
+          // Insert new problem
+          const { error: insertError } = await supabase
+            .from('problems')
+            .insert({
+              name: problem.title,
+              description: (problem.content || problem.title).replace(/<[^>]*>/g, '').substring(0, 500) + (problem.content && problem.content.length > 500 ? '...' : ''),
+              platform: platform,
+              topic,
+              language: problem.language || 'Python',
+              difficulty,
+              completed: true,
+              url: problem.url,
+              platform_problem_id: problem.platform_problem_id,
+              synced_from_platform: true,
+              platform_url: problem.url,
+              solved_date: problem.timestamp ? new Date(parseInt(problem.timestamp) * 1000).toISOString() : new Date().toISOString(),
+              user_id: user.id
+            });
 
-        if (insertError) {
-          console.error(`Error inserting problem ${problem.title}:`, insertError);
-        } else {
-          syncedCount++;
-          console.log(`Successfully synced problem: ${problem.title}`);
+          if (insertError) {
+            console.error(`Error inserting problem ${problem.title}:`, insertError);
+          } else {
+            syncedCount++;
+            console.log(`Successfully synced problem: ${problem.title}`);
+          }
+
+        } catch (error) {
+          console.error(`Error processing problem ${problem.title}:`, error);
         }
-
-      } catch (error) {
-        console.error(`Error processing problem ${problem.title}:`, error);
       }
+
+      // Trigger UI update after each batch
+      if (onProblemsUpdate) onProblemsUpdate();
+      
+      // Small delay to prevent overwhelming the UI
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
 
     return syncedCount;
@@ -424,6 +476,17 @@ const LinkAccounts = () => {
                       <p className="text-gray-400 text-xs">
                         Last synced: {new Date(account.last_sync).toLocaleDateString()}
                       </p>
+                    )}
+                    {syncProgress[account.platform] && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-blue-400 text-xs">{syncProgress[account.platform].message}</p>
+                        {syncProgress[account.platform].total > 0 && (
+                          <Progress 
+                            value={(syncProgress[account.platform].current / syncProgress[account.platform].total) * 100} 
+                            className="w-48 h-2"
+                          />
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

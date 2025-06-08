@@ -61,7 +61,7 @@ serve(async (req) => {
           
           console.log(`Found ${problems.length} solved problems from Codeforces API`)
         } else {
-          throw new Error('Invalid API response')
+          throw new Error('Invalid API response or user not found')
         }
       } else {
         console.log(`Codeforces API request failed with status: ${submissionsResponse.status}`)
@@ -69,7 +69,7 @@ serve(async (req) => {
       }
     } catch (error) {
       console.log('Codeforces API error:', error)
-      throw new Error('Unable to fetch Codeforces data')
+      throw new Error('Unable to fetch Codeforces data. Please check if the username is correct.')
     }
 
     console.log(`Codeforces sync completed: ${problems.length} problems`)

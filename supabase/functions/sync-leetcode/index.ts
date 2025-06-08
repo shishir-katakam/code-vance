@@ -18,7 +18,7 @@ serve(async (req) => {
     let problems = []
     
     try {
-      // Try LeetCode GraphQL API for user stats
+      // Primary: Try LeetCode GraphQL API for user stats
       const graphqlResponse = await fetch('https://leetcode.com/graphql', {
         method: 'POST',
         headers: {
@@ -37,13 +37,12 @@ serve(async (req) => {
                     count
                   }
                 }
-                recentSubmissionList(limit: 100) {
+                recentSubmissionList(limit: 200) {
                   title
                   titleSlug
                   timestamp
                   statusDisplay
                   lang
-                  __typename
                 }
               }
             }
@@ -65,22 +64,22 @@ serve(async (req) => {
           const totalSolved = stats.reduce((sum, stat) => sum + stat.count, 0)
           console.log(`User has ${totalSolved} total solved problems`)
           
+          // Get difficulty breakdown
+          const easyCount = stats.find(s => s.difficulty === 'Easy')?.count || 0
+          const mediumCount = stats.find(s => s.difficulty === 'Medium')?.count || 0
+          const hardCount = stats.find(s => s.difficulty === 'Hard')?.count || 0
+          
           // Process recent accepted submissions to get actual problem details
           const solvedProblems = new Set()
           for (const submission of submissions) {
             if (submission.statusDisplay === 'Accepted' && !solvedProblems.has(submission.titleSlug)) {
               solvedProblems.add(submission.titleSlug)
               
-              // Determine difficulty based on stats distribution
+              // Determine difficulty based on position in stats
               let difficulty = 'Medium'
-              const easyCount = stats.find(s => s.difficulty === 'Easy')?.count || 0
-              const mediumCount = stats.find(s => s.difficulty === 'Medium')?.count || 0
-              const hardCount = stats.find(s => s.difficulty === 'Hard')?.count || 0
-              
-              // Simple heuristic for difficulty assignment
-              const totalProcessed = problems.length
-              if (totalProcessed < easyCount) difficulty = 'Easy'
-              else if (totalProcessed < easyCount + mediumCount) difficulty = 'Medium'
+              const currentCount = problems.length
+              if (currentCount < easyCount) difficulty = 'Easy'
+              else if (currentCount < easyCount + mediumCount) difficulty = 'Medium'
               else difficulty = 'Hard'
               
               problems.push({
@@ -88,7 +87,7 @@ serve(async (req) => {
                 title: submission.title,
                 titleSlug: submission.titleSlug,
                 difficulty: difficulty,
-                topics: ['Algorithm'], // Default topic
+                topics: ['Algorithm'],
                 content: `LeetCode problem: ${submission.title}`,
                 language: submission.lang || 'Python',
                 timestamp: parseInt(submission.timestamp),
@@ -97,14 +96,11 @@ serve(async (req) => {
             }
           }
           
-          // If we have more solved problems than recent submissions, generate additional ones
+          // Generate additional problems to match the total count
           if (totalSolved > problems.length) {
-            const additionalNeeded = Math.min(totalSolved - problems.length, 200) // Cap at 200 total
-            const easyCount = stats.find(s => s.difficulty === 'Easy')?.count || 0
-            const mediumCount = stats.find(s => s.difficulty === 'Medium')?.count || 0
-            const hardCount = stats.find(s => s.difficulty === 'Hard')?.count || 0
+            const additionalNeeded = totalSolved - problems.length
             
-            for (let i = problems.length; i < problems.length + additionalNeeded; i++) {
+            for (let i = problems.length; i < totalSolved; i++) {
               let difficulty = 'Medium'
               if (i < easyCount) difficulty = 'Easy'
               else if (i < easyCount + mediumCount) difficulty = 'Medium'
@@ -137,7 +133,7 @@ serve(async (req) => {
     } catch (error) {
       console.log('LeetCode GraphQL error:', error)
       
-      // Try alternative API
+      // Fallback: Try alternative stats API
       try {
         console.log('Trying LeetCode stats API...')
         const statsResponse = await fetch(`https://leetcode-stats-api.herokuapp.com/${username}`)
@@ -147,13 +143,15 @@ serve(async (req) => {
           console.log('LeetCode stats API response:', statsData)
           
           if (statsData.status === 'success' && statsData.totalSolved > 0) {
-            // Generate problems based on actual solved count
             const totalSolved = statsData.totalSolved
+            const easySolved = statsData.easySolved || 0
+            const mediumSolved = statsData.mediumSolved || 0
+            const hardSolved = statsData.hardSolved || 0
             
             for (let i = 1; i <= totalSolved; i++) {
               let difficulty = 'Easy'
-              if (i <= statsData.easySolved) difficulty = 'Easy'
-              else if (i <= (statsData.easySolved + statsData.mediumSolved)) difficulty = 'Medium'
+              if (i <= easySolved) difficulty = 'Easy'
+              else if (i <= (easySolved + mediumSolved)) difficulty = 'Medium'
               else difficulty = 'Hard'
               
               problems.push({
