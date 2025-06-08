@@ -19,75 +19,60 @@ serve(async (req) => {
     
     try {
       // Use Codeforces API to get user submissions
-      const response = await fetch(`https://codeforces.com/api/user.status?handle=${username}&from=1&count=100`)
+      const submissionsResponse = await fetch(`https://codeforces.com/api/user.status?handle=${username}&from=1&count=10000`)
       
-      if (response.ok) {
-        const data = await response.json()
-        console.log('Codeforces API response status:', data.status)
+      if (submissionsResponse.ok) {
+        const data = await submissionsResponse.json()
+        console.log('Codeforces API response received')
         
         if (data.status === 'OK' && data.result) {
+          const submissions = data.result
           const solvedProblems = new Set()
           
-          for (const submission of data.result) {
-            if (submission.verdict === 'OK' && !solvedProblems.has(submission.problem.name)) {
-              solvedProblems.add(submission.problem.name)
+          // Process accepted submissions
+          for (const submission of submissions) {
+            if (submission.verdict === 'OK') {
+              const problemId = `${submission.problem.contestId}${submission.problem.index}`
               
-              problems.push({
-                platform_problem_id: `${submission.problem.contestId}${submission.problem.index}`,
-                title: submission.problem.name,
-                titleSlug: submission.problem.name.toLowerCase().replace(/\s+/g, '-'),
-                difficulty: submission.problem.rating ? 
-                  (submission.problem.rating <= 1200 ? 'Easy' : 
-                   submission.problem.rating <= 1600 ? 'Medium' : 'Hard') : 'Medium',
-                topics: submission.problem.tags && submission.problem.tags.length > 0 ? submission.problem.tags : ['Math'],
-                content: `Problem from contest ${submission.problem.contestId}, index ${submission.problem.index}. Rating: ${submission.problem.rating || 'Unrated'}`,
-                language: submission.programmingLanguage,
-                timestamp: submission.creationTimeSeconds,
-                url: `https://codeforces.com/problemset/problem/${submission.problem.contestId}/${submission.problem.index}`
-              })
-              
-              // Limit to 20 most recent solved problems
-              if (problems.length >= 20) break
+              if (!solvedProblems.has(problemId)) {
+                solvedProblems.add(problemId)
+                
+                // Map rating to difficulty
+                let difficulty = 'Medium'
+                const rating = submission.problem.rating || 1200
+                if (rating < 1200) difficulty = 'Easy'
+                else if (rating < 1800) difficulty = 'Medium'
+                else difficulty = 'Hard'
+                
+                problems.push({
+                  platform_problem_id: problemId,
+                  title: submission.problem.name,
+                  titleSlug: submission.problem.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+                  difficulty: difficulty,
+                  topics: submission.problem.tags || ['Implementation'],
+                  content: `Codeforces problem: ${submission.problem.name}`,
+                  language: submission.programmingLanguage || 'C++',
+                  timestamp: submission.creationTimeSeconds,
+                  url: `https://codeforces.com/problemset/problem/${submission.problem.contestId}/${submission.problem.index}`
+                })
+              }
             }
           }
           
-          console.log(`Codeforces sync successful: found ${problems.length} solved problems`)
+          console.log(`Found ${problems.length} solved problems from Codeforces API`)
         } else {
-          throw new Error(`Codeforces API returned: ${data.comment || 'Unknown error'}`)
+          throw new Error('Invalid API response')
         }
       } else {
-        throw new Error(`Codeforces API request failed with status: ${response.status}`)
+        console.log(`Codeforces API request failed with status: ${submissionsResponse.status}`)
+        throw new Error('API request failed')
       }
     } catch (error) {
       console.log('Codeforces API error:', error)
-      
-      // Fallback sample data
-      problems.push(
-        {
-          platform_problem_id: `${username}-1A`,
-          title: 'Theatre Square',
-          titleSlug: 'theatre-square',
-          difficulty: 'Easy',
-          topics: ['Math'],
-          content: 'Theatre Square in the capital city of Berland has a rectangular shape.',
-          language: 'C++',
-          timestamp: Math.floor(Date.now() / 1000) - 86400,
-          url: 'https://codeforces.com/problemset/problem/1/A'
-        },
-        {
-          platform_problem_id: `${username}-4A`,
-          title: 'Watermelon',
-          titleSlug: 'watermelon',
-          difficulty: 'Easy',
-          topics: ['Math'],
-          content: 'One hot summer day Pete and his friend Billy decided to buy a watermelon.',
-          language: 'C++',
-          timestamp: Math.floor(Date.now() / 1000) - 172800,
-          url: 'https://codeforces.com/problemset/problem/4/A'
-        }
-      )
+      throw new Error('Unable to fetch Codeforces data')
     }
 
+    console.log(`Codeforces sync completed: ${problems.length} problems`)
     return new Response(JSON.stringify({ problems }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

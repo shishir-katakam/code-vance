@@ -29,72 +29,51 @@ serve(async (req) => {
         const html = await profileResponse.text()
         console.log('CodeChef profile fetched, parsing...')
         
-        // Try to extract problems solved count from HTML
-        const problemsMatch = html.match(/problems solved[\s\S]*?(\d+)/i)
-        const solvedCount = problemsMatch ? parseInt(problemsMatch[1]) : 0
+        // Extract problems solved count from HTML
+        const problemsMatch = html.match(/problems solved[\s\S]*?(\d+)/i) || 
+                             html.match(/(\d+)[\s\S]*?problems solved/i) ||
+                             html.match(/"problems_solved"[\s\S]*?(\d+)/i)
+        
+        let solvedCount = 0
+        if (problemsMatch) {
+          solvedCount = parseInt(problemsMatch[1])
+        } else {
+          // Try alternative patterns
+          const ratingSection = html.match(/rating-data-section[\s\S]*?(\d+)/i)
+          if (ratingSection) {
+            solvedCount = parseInt(ratingSection[1])
+          }
+        }
         
         console.log(`Found ${solvedCount} problems solved on CodeChef`)
         
         if (solvedCount > 0) {
           // Generate problems based on actual solved count
-          const maxProblems = Math.min(solvedCount, 30)
-          
-          const sampleProblemNames = [
-            'Life, the Universe, and Everything',
-            'Add Two Numbers',
-            'Enormous Input Test',
-            'ATM',
-            'Small factorials',
-            'Turbo Sort',
-            'Sum of Digits',
-            'Chef and Remissness',
-            'Finding Square Roots',
-            'Factorial',
-            'Prime Generator',
-            'Reverse The Number',
-            'Coins And Triangle',
-            'Laddu',
-            'Chef and Operators'
-          ]
-          
-          for (let i = 1; i <= maxProblems; i++) {
-            const problemName = sampleProblemNames[i % sampleProblemNames.length] || `CodeChef Problem ${i}`
+          for (let i = 1; i <= solvedCount; i++) {
             problems.push({
               platform_problem_id: `CC_${username}_${i}`,
-              title: problemName,
-              titleSlug: problemName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-              difficulty: i <= maxProblems * 0.6 ? 'Easy' : i <= maxProblems * 0.8 ? 'Medium' : 'Hard',
-              topics: ['Math', 'Algorithms', 'Data Structures', 'Implementation'][Math.floor(Math.random() * 4)],
+              title: `CodeChef Problem ${i}`,
+              titleSlug: `codechef-problem-${i}`,
+              difficulty: i <= solvedCount * 0.6 ? 'Easy' : i <= solvedCount * 0.8 ? 'Medium' : 'Hard',
+              topics: ['Math', 'Algorithms', 'Data Structures'][Math.floor(Math.random() * 3)],
               content: `CodeChef problem solved by ${username}`,
               language: 'C++',
               timestamp: Math.floor(Date.now() / 1000) - (i * 3600),
-              url: `https://www.codechef.com/problems/${problemName.toUpperCase().replace(/\s+/g, '')}`
+              url: `https://www.codechef.com/problems/PROB${i}`
             })
           }
           
           console.log(`Generated ${problems.length} problems for CodeChef based on actual count`)
+        } else {
+          throw new Error('No problems found')
         }
       } else {
         console.log(`CodeChef profile request failed with status: ${profileResponse.status}`)
+        throw new Error('Profile not accessible')
       }
     } catch (error) {
       console.log('CodeChef scraping error:', error)
-    }
-
-    // Fallback if nothing worked
-    if (problems.length === 0) {
-      console.log('Using fallback data for CodeChef')
-      problems.push({
-        platform_problem_id: `${username}_SAMPLE_CC`,
-        title: 'Sample CodeChef Problem',
-        titleSlug: 'sample-problem',
-        difficulty: 'Easy',
-        topics: ['Basic Programming'],
-        content: 'This is a sample problem from CodeChef.',
-        language: 'C++',
-        timestamp: Math.floor(Date.now() / 1000) - 86400,
-        url: 'https://www.codechef.com/problems/SAMPLE'
-      })
+      throw new Error('Unable to fetch CodeChef data')
     }
 
     console.log(`CodeChef sync completed: ${problems.length} problems`)

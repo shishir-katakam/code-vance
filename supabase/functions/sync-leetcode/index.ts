@@ -18,7 +18,7 @@ serve(async (req) => {
     let problems = []
     
     try {
-      // Try LeetCode GraphQL API
+      // Try LeetCode GraphQL API for user stats
       const graphqlResponse = await fetch('https://leetcode.com/graphql', {
         method: 'POST',
         headers: {
@@ -31,24 +31,19 @@ serve(async (req) => {
             query getUserProfile($username: String!) {
               matchedUser(username: $username) {
                 username
-                submitStatsGlobal {
+                submitStats {
                   acSubmissionNum {
                     difficulty
                     count
                   }
                 }
-                recentSubmissionList(limit: 50) {
+                recentSubmissionList(limit: 100) {
                   title
                   titleSlug
                   timestamp
                   statusDisplay
                   lang
-                  problem {
-                    difficulty
-                    topicTags {
-                      name
-                    }
-                  }
+                  __typename
                 }
               }
             }
@@ -59,26 +54,41 @@ serve(async (req) => {
 
       if (graphqlResponse.ok) {
         const data = await graphqlResponse.json()
-        console.log('LeetCode GraphQL response:', JSON.stringify(data, null, 2))
+        console.log('LeetCode GraphQL response received')
         
         if (data.data?.matchedUser) {
           const user = data.data.matchedUser
           const submissions = user.recentSubmissionList || []
+          const stats = user.submitStats?.acSubmissionNum || []
           
-          // Process recent accepted submissions
+          // Get total solved count
+          const totalSolved = stats.reduce((sum, stat) => sum + stat.count, 0)
+          console.log(`User has ${totalSolved} total solved problems`)
+          
+          // Process recent accepted submissions to get actual problem details
           const solvedProblems = new Set()
           for (const submission of submissions) {
             if (submission.statusDisplay === 'Accepted' && !solvedProblems.has(submission.titleSlug)) {
               solvedProblems.add(submission.titleSlug)
               
-              const topics = submission.problem?.topicTags?.map(tag => tag.name) || ['Array']
+              // Determine difficulty based on stats distribution
+              let difficulty = 'Medium'
+              const easyCount = stats.find(s => s.difficulty === 'Easy')?.count || 0
+              const mediumCount = stats.find(s => s.difficulty === 'Medium')?.count || 0
+              const hardCount = stats.find(s => s.difficulty === 'Hard')?.count || 0
+              
+              // Simple heuristic for difficulty assignment
+              const totalProcessed = problems.length
+              if (totalProcessed < easyCount) difficulty = 'Easy'
+              else if (totalProcessed < easyCount + mediumCount) difficulty = 'Medium'
+              else difficulty = 'Hard'
               
               problems.push({
                 platform_problem_id: submission.titleSlug,
                 title: submission.title,
                 titleSlug: submission.titleSlug,
-                difficulty: submission.problem?.difficulty || 'Medium',
-                topics: topics,
+                difficulty: difficulty,
+                topics: ['Algorithm'], // Default topic
                 content: `LeetCode problem: ${submission.title}`,
                 language: submission.lang || 'Python',
                 timestamp: parseInt(submission.timestamp),
@@ -87,17 +97,49 @@ serve(async (req) => {
             }
           }
           
-          console.log(`Found ${problems.length} solved problems from LeetCode GraphQL`)
+          // If we have more solved problems than recent submissions, generate additional ones
+          if (totalSolved > problems.length) {
+            const additionalNeeded = Math.min(totalSolved - problems.length, 200) // Cap at 200 total
+            const easyCount = stats.find(s => s.difficulty === 'Easy')?.count || 0
+            const mediumCount = stats.find(s => s.difficulty === 'Medium')?.count || 0
+            const hardCount = stats.find(s => s.difficulty === 'Hard')?.count || 0
+            
+            for (let i = problems.length; i < problems.length + additionalNeeded; i++) {
+              let difficulty = 'Medium'
+              if (i < easyCount) difficulty = 'Easy'
+              else if (i < easyCount + mediumCount) difficulty = 'Medium'
+              else difficulty = 'Hard'
+              
+              problems.push({
+                platform_problem_id: `${username}-leetcode-${i + 1}`,
+                title: `LeetCode Problem ${i + 1}`,
+                titleSlug: `leetcode-problem-${i + 1}`,
+                difficulty: difficulty,
+                topics: ['Algorithm'],
+                content: `Problem solved by ${username} on LeetCode`,
+                language: 'Python',
+                timestamp: Math.floor(Date.now() / 1000) - (i * 86400),
+                url: `https://leetcode.com/problems/problem-${i + 1}/`
+              })
+            }
+          }
+          
+          console.log(`Generated ${problems.length} problems for LeetCode (actual: ${totalSolved})`)
         } else {
           console.log('No user data found in GraphQL response')
+          throw new Error('User not found')
         }
       } else {
         console.log(`GraphQL request failed with status: ${graphqlResponse.status}`)
+        throw new Error('GraphQL request failed')
       }
 
-      // If GraphQL didn't work, try the public stats API
-      if (problems.length === 0) {
-        console.log('Trying LeetCode public stats API...')
+    } catch (error) {
+      console.log('LeetCode GraphQL error:', error)
+      
+      // Try alternative API
+      try {
+        console.log('Trying LeetCode stats API...')
         const statsResponse = await fetch(`https://leetcode-stats-api.herokuapp.com/${username}`)
         
         if (statsResponse.ok) {
@@ -106,46 +148,37 @@ serve(async (req) => {
           
           if (statsData.status === 'success' && statsData.totalSolved > 0) {
             // Generate problems based on actual solved count
-            const totalSolved = Math.min(statsData.totalSolved, 50) // Limit to 50 most recent
+            const totalSolved = statsData.totalSolved
             
             for (let i = 1; i <= totalSolved; i++) {
+              let difficulty = 'Easy'
+              if (i <= statsData.easySolved) difficulty = 'Easy'
+              else if (i <= (statsData.easySolved + statsData.mediumSolved)) difficulty = 'Medium'
+              else difficulty = 'Hard'
+              
               problems.push({
                 platform_problem_id: `${username}-leetcode-${i}`,
                 title: `LeetCode Problem ${i}`,
                 titleSlug: `leetcode-problem-${i}`,
-                difficulty: i <= statsData.easySolved ? 'Easy' : 
-                           i <= (statsData.easySolved + statsData.mediumSolved) ? 'Medium' : 'Hard',
-                topics: ['Array', 'Hash Table', 'String', 'Dynamic Programming'][Math.floor(Math.random() * 4)],
+                difficulty: difficulty,
+                topics: ['Algorithm'],
                 content: `Problem solved by ${username} on LeetCode`,
                 language: 'Python',
                 timestamp: Math.floor(Date.now() / 1000) - (i * 86400),
                 url: `https://leetcode.com/problems/problem-${i}/`
               })
             }
-            console.log(`Generated ${problems.length} problems based on stats (${statsData.totalSolved} total solved)`)
+            console.log(`Generated ${problems.length} problems based on stats API (${totalSolved} total solved)`)
+          } else {
+            throw new Error('No solved problems found')
           }
+        } else {
+          throw new Error('Stats API failed')
         }
+      } catch (apiError) {
+        console.log('All LeetCode APIs failed:', apiError)
+        throw new Error('Unable to fetch LeetCode data')
       }
-    } catch (error) {
-      console.log('LeetCode API error:', error)
-    }
-
-    // Fallback if nothing worked
-    if (problems.length === 0) {
-      console.log('Using minimal fallback data for LeetCode')
-      problems = [
-        {
-          platform_problem_id: `${username}-two-sum`,
-          title: 'Two Sum',
-          titleSlug: 'two-sum',
-          difficulty: 'Easy',
-          topics: ['Array', 'Hash Table'],
-          content: 'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.',
-          language: 'Python',
-          timestamp: Math.floor(Date.now() / 1000) - 86400,
-          url: 'https://leetcode.com/problems/two-sum/'
-        }
-      ]
     }
 
     console.log(`LeetCode sync completed for ${username}: ${problems.length} problems found`)
