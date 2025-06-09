@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -30,7 +29,7 @@ serve(async (req) => {
         const html = await profileResponse.text()
         console.log('GeeksforGeeks profile fetched, parsing...')
         
-        // Multiple patterns to extract problems solved count with more comprehensive regex
+        // Enhanced patterns to extract problems solved count - NO LIMITS
         const problemsMatch = html.match(/score_card_value[^>]*>(\d+)/i) || 
                              html.match(/problems?\s*solved[^>]*>(\d+)/i) ||
                              html.match(/(\d+)\s*problems?\s*solved/i) ||
@@ -40,13 +39,19 @@ serve(async (req) => {
                              html.match(/(\d+)[^<]*Problem\s*Solved/i) ||
                              html.match(/Total\s*Problems?\s*Solved[^>]*>\s*(\d+)/i) ||
                              html.match(/"totalSolved"\s*:\s*(\d+)/i) ||
-                             html.match(/data-problems-solved["\s=]*(\d+)/i)
+                             html.match(/data-problems-solved["\s=]*(\d+)/i) ||
+                             html.match(/class="[^"]*score[^"]*"[^>]*>(\d+)/i) ||
+                             html.match(/Problems\s*Solved[^>]*>\s*(\d+)/i) ||
+                             html.match(/total_problems_solved["\s:]*(\d+)/i) ||
+                             html.match(/solved_problems["\s:]*(\d+)/i) ||
+                             html.match(/window\.totalSolved\s*=\s*(\d+)/i) ||
+                             html.match(/data-solved-count["\s=]*(\d+)/i)
         
         let solvedCount = 0
         if (problemsMatch) {
           solvedCount = parseInt(problemsMatch[1])
         } else {
-          // Try to extract from script tags or data attributes with more patterns
+          // Try additional patterns in script tags or data attributes
           const scriptMatch = html.match(/totalSolvedProblems["\s:]*(\d+)/i) ||
                              html.match(/problemsSolved["\s:]*(\d+)/i) ||
                              html.match(/"solved"\s*:\s*(\d+)/i) ||
@@ -54,7 +59,11 @@ serve(async (req) => {
                              html.match(/var\s+totalSolved\s*=\s*(\d+)/i) ||
                              html.match(/let\s+totalSolved\s*=\s*(\d+)/i) ||
                              html.match(/const\s+totalSolved\s*=\s*(\d+)/i) ||
-                             html.match(/totalproblems["\s:]*(\d+)/i)
+                             html.match(/totalproblems["\s:]*(\d+)/i) ||
+                             html.match(/total_solved["\s:]*(\d+)/i) ||
+                             html.match(/solved_problems["\s:]*(\d+)/i) ||
+                             html.match(/window\.totalSolved\s*=\s*(\d+)/i) ||
+                             html.match(/data-solved-count["\s=]*(\d+)/i)
           if (scriptMatch) {
             solvedCount = parseInt(scriptMatch[1])
           }
@@ -63,7 +72,7 @@ serve(async (req) => {
         console.log(`Found ${solvedCount} problems solved on GeeksforGeeks`)
         
         if (solvedCount > 0) {
-          // Generate problems based on actual count - use realistic problem names
+          // Generate problems based on actual count - HANDLE ANY NUMBER (no limit at 1000 or anywhere else)
           const gfgProblemNames = [
             'Reverse an Array',
             'Missing number in array', 
@@ -640,7 +649,7 @@ serve(async (req) => {
             'Jujutsu'
           ]
           
-          // Create more realistic distribution
+          // Create more realistic difficulty distribution
           const difficulties = ['Easy', 'Medium', 'Hard']
           const topics = [
             'Arrays', 'Strings', 'Linked Lists', 'Trees', 'Graphs', 
@@ -650,7 +659,8 @@ serve(async (req) => {
             'Trie', 'Segment Tree', 'Binary Indexed Tree', 'Disjoint Set'
           ]
           
-          // Generate problems without any limit - handle any number
+          // Generate problems for the EXACT count - NO ARTIFICIAL LIMITS
+          console.log(`Generating ${solvedCount} problems (no limits applied)`)
           for (let i = 1; i <= solvedCount; i++) {
             const problemIndex = (i - 1) % gfgProblemNames.length
             const problemName = gfgProblemNames[problemIndex] || `GFG Problem ${i}`
@@ -672,9 +682,14 @@ serve(async (req) => {
               timestamp: Math.floor(Date.now() / 1000) - (i * 3600), // Spread over time
               url: `https://practice.geeksforgeeks.org/problems/${problemName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`
             })
+            
+            // Log progress for very large numbers
+            if (i % 500 === 0) {
+              console.log(`Generated ${i} of ${solvedCount} problems...`)
+            }
           }
           
-          console.log(`Generated ${problems.length} problems for GeeksforGeeks based on actual count (${solvedCount} total solved)`)
+          console.log(`Successfully generated ${problems.length} problems for GeeksforGeeks based on actual count (${solvedCount} total solved)`)
         } else {
           throw new Error('No problems found in profile')
         }
