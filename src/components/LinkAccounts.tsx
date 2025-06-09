@@ -22,6 +22,13 @@ interface LinkAccountsProps {
   onProblemsUpdate?: () => void;
 }
 
+// Store sync states globally to persist across tab switches
+const globalSyncState = {
+  syncingPlatforms: new Set<string>(),
+  syncProgress: {} as {[key: string]: number},
+  activeSyncs: new Map<string, Promise<void>>()
+};
+
 const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -41,6 +48,22 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
 
   useEffect(() => {
     loadLinkedAccounts();
+    
+    // Restore sync states from global state
+    setSyncingPlatforms(Array.from(globalSyncState.syncingPlatforms));
+    setSyncProgress({ ...globalSyncState.syncProgress });
+    
+    // Set up interval to update progress for active syncs
+    const progressInterval = setInterval(() => {
+      if (globalSyncState.syncingPlatforms.size > 0) {
+        setSyncingPlatforms(Array.from(globalSyncState.syncingPlatforms));
+        setSyncProgress({ ...globalSyncState.syncProgress });
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(progressInterval);
+    };
   }, []);
 
   const loadLinkedAccounts = async () => {
@@ -185,11 +208,41 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
   };
 
   const handleSyncAccount = async (account: LinkedAccount) => {
-    setSyncingPlatforms(prev => [...prev, account.platform]);
-    setSyncProgress(prev => ({ ...prev, [account.platform]: 0 }));
+    // Check if sync is already running for this platform
+    if (globalSyncState.activeSyncs.has(account.platform)) {
+      toast({
+        title: "Sync In Progress",
+        description: `${account.platform} sync is already running in the background.`,
+      });
+      return;
+    }
+
+    // Add to global sync state
+    globalSyncState.syncingPlatforms.add(account.platform);
+    globalSyncState.syncProgress[account.platform] = 0;
     
+    // Update local state
+    setSyncingPlatforms(Array.from(globalSyncState.syncingPlatforms));
+    setSyncProgress({ ...globalSyncState.syncProgress });
+
+    // Create background sync promise
+    const syncPromise = performBackgroundSync(account);
+    globalSyncState.activeSyncs.set(account.platform, syncPromise);
+
+    // Handle sync completion
+    syncPromise.finally(() => {
+      globalSyncState.syncingPlatforms.delete(account.platform);
+      delete globalSyncState.syncProgress[account.platform];
+      globalSyncState.activeSyncs.delete(account.platform);
+      
+      setSyncingPlatforms(Array.from(globalSyncState.syncingPlatforms));
+      setSyncProgress({ ...globalSyncState.syncProgress });
+    });
+  };
+
+  const performBackgroundSync = async (account: LinkedAccount) => {
     try {
-      console.log(`Starting sync for ${account.platform} with username: ${account.username}`);
+      console.log(`Starting background sync for ${account.platform} with username: ${account.username}`);
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -251,7 +304,7 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
 
       console.log(`Received ${data.problems.length} problems from ${account.platform}`);
       
-      const syncedCount = await processProblems(data.problems, account.id, account.platform);
+      const syncedCount = await processProblemsInBackground(data.problems, account.id, account.platform);
       
       // Update last sync time
       await supabase
@@ -278,17 +331,10 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
         description: error.message || `Failed to sync ${account.platform} account. Please check your username and try again.`,
         variant: "destructive",
       });
-    } finally {
-      setSyncingPlatforms(prev => prev.filter(p => p !== account.platform));
-      setSyncProgress(prev => {
-        const newProgress = { ...prev };
-        delete newProgress[account.platform];
-        return newProgress;
-      });
     }
   };
 
-  const processProblems = async (problems: any[], accountId: string, platform: string) => {
+  const processProblemsInBackground = async (problems: any[], accountId: string, platform: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return 0;
 
@@ -298,9 +344,9 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
     for (let i = 0; i < problems.length; i++) {
       const problem = problems[i];
       try {
-        // Update progress in real-time
+        // Update progress in global state
         const progressPercent = Math.round(((i + 1) / total) * 100);
-        setSyncProgress(prev => ({ ...prev, [platform]: progressPercent }));
+        globalSyncState.syncProgress[platform] = progressPercent;
 
         // Check if problem already exists
         const { data: existing } = await supabase
@@ -346,7 +392,7 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
           console.log(`Successfully synced problem: ${problem.title}`);
           
           // Trigger UI update after every few problems for real-time feedback
-          if (syncedCount % 5 === 0 && onProblemsUpdate) {
+          if (syncedCount % 10 === 0 && onProblemsUpdate) {
             onProblemsUpdate();
           }
         }
@@ -469,7 +515,7 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
                     )}
                     {syncProgress[account.platform] !== undefined && (
                       <div className="mt-2">
-                        <p className="text-blue-400 text-xs">Syncing... {syncProgress[account.platform]}%</p>
+                        <p className="text-blue-400 text-xs">Syncing in background... {syncProgress[account.platform]}%</p>
                         <div className="w-48 h-2 bg-gray-700 rounded-full mt-1">
                           <div 
                             className="h-2 bg-blue-500 rounded-full transition-all duration-300"
