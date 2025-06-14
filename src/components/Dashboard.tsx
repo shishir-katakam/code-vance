@@ -44,14 +44,25 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
   // Check authentication and load user data
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        await loadProblems();
-      } else {
-        if (onLogout) onLogout();
+      try {
+        console.log('Checking auth session...');
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Session:', session);
+
+        if (session?.user) {
+          setUser(session.user);
+          console.log('User session found, loading problems...');
+          await loadProblems();
+        } else {
+          console.log('No session found, logging out...');
+          if (onLogout) onLogout();
+        }
+      } catch (err) {
+        console.error('Error during auth check:', err);
+      } finally {
+        setIsLoading(false);
+        console.log('Done checking auth -- isLoading set to false');
       }
-      setIsLoading(false);
     };
 
     checkAuth();
