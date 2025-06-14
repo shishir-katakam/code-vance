@@ -18,7 +18,7 @@ interface ProgressChartProps {
 }
 
 const ProgressChart = ({ problems }: ProgressChartProps) => {
-  // Calculate actual weekly progress data based on user's problems
+  // Calculate actual weekly progress data based on completed problems
   const getWeeklyData = () => {
     const today = new Date();
     const weekData = [
@@ -38,13 +38,15 @@ const ProgressChart = ({ problems }: ProgressChartProps) => {
     startOfWeek.setDate(today.getDate() + mondayOffset);
     startOfWeek.setHours(0, 0, 0, 0);
 
-    // Count problems added each day this week
+    // Count completed problems added each day this week
     problems.forEach(problem => {
-      const problemDate = new Date(problem.dateAdded);
-      const daysDiff = Math.floor((problemDate.getTime() - startOfWeek.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (daysDiff >= 0 && daysDiff < 7) {
-        weekData[daysDiff].solved++;
+      if (problem.completed) {
+        const problemDate = new Date(problem.dateAdded);
+        const daysDiff = Math.floor((problemDate.getTime() - startOfWeek.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysDiff >= 0 && daysDiff < 7) {
+          weekData[daysDiff].solved++;
+        }
       }
     });
 
