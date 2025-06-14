@@ -7,6 +7,7 @@ import SignupForm from '@/components/SignupForm';
 import Dashboard from '@/components/Dashboard';
 import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
+import { usePlatformStats } from '@/hooks/usePlatformStats';
 import { Code2, TrendingUp, Target, Users, Sparkles, Zap, Shield, Rocket, X, ChevronRight, ChevronLeft, Info } from 'lucide-react';
 
 const Index = () => {
@@ -15,6 +16,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showDemoTour, setShowDemoTour] = useState(false);
   const [currentTourStep, setCurrentTourStep] = useState(0);
+  const { stats, isLoading: statsLoading } = usePlatformStats();
 
   const tourSteps = [
     {
@@ -138,6 +140,16 @@ const Index = () => {
       </div>
     );
   }
+
+  // Format numbers for display
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}M+`;
+    } else if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K+`;
+    }
+    return `${num}+`;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
@@ -276,9 +288,24 @@ const Index = () => {
         <div className={`bg-black/30 backdrop-blur-xl rounded-3xl border border-white/10 p-12 mb-24 animate-fade-in delay-500 transition-all duration-500 ${showDemoTour && currentStep.highlight === 'stats' ? 'ring-4 ring-purple-400/50' : ''}`}>
           <div className="grid md:grid-cols-3 gap-12 text-center">
             {[
-              { number: '50K+', label: 'Active Developers', icon: Users },
-              { number: '2M+', label: 'Problems Tracked', icon: Target },
-              { number: '99.9%', label: 'Sync Accuracy', icon: Shield }
+              { 
+                number: statsLoading ? '...' : formatNumber(stats.total_users || 0), 
+                label: 'Active Developers', 
+                icon: Users,
+                actualValue: stats.total_users || 0
+              },
+              { 
+                number: statsLoading ? '...' : formatNumber(stats.total_problems || 0), 
+                label: 'Problems Tracked', 
+                icon: Target,
+                actualValue: stats.total_problems || 0
+              },
+              { 
+                number: '99.9%', 
+                label: 'Sync Accuracy', 
+                icon: Shield,
+                actualValue: 99.9
+              }
             ].map((stat, index) => (
               <div key={index} className="group">
                 <stat.icon className="w-8 h-8 mx-auto mb-4 text-purple-400 group-hover:scale-110 transition-transform duration-300" />
@@ -286,6 +313,9 @@ const Index = () => {
                   {stat.number}
                 </div>
                 <div className="text-slate-300 font-medium">{stat.label}</div>
+                {!statsLoading && stat.actualValue !== undefined && stat.actualValue < 100 && (
+                  <div className="text-xs text-slate-500 mt-1">Real-time data</div>
+                )}
               </div>
             ))}
           </div>

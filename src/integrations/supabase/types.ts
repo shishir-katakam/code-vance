@@ -45,6 +45,30 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_stats: {
+        Row: {
+          id: string
+          last_updated: string
+          total_platforms: number
+          total_problems: number
+          total_users: number
+        }
+        Insert: {
+          id?: string
+          last_updated?: string
+          total_platforms?: number
+          total_problems?: number
+          total_users?: number
+        }
+        Update: {
+          id?: string
+          last_updated?: string
+          total_platforms?: number
+          total_problems?: number
+          total_users?: number
+        }
+        Relationships: []
+      }
       problems: {
         Row: {
           completed: boolean
@@ -104,7 +128,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_platform_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       Difficulty: "EASY" | "MEDIUM" | "HARD"
