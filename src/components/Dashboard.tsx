@@ -12,6 +12,9 @@ import Footer from './Footer';
 import ResetStatsDialog from './ResetStatsDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import DashboardHeader from './Dashboard/DashboardHeader';
+import StatsCards from './Dashboard/StatsCards';
+import DashboardTabs from './Dashboard/DashboardTabs';
 
 interface Problem {
   id: number;
@@ -258,170 +261,27 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
-      {/* Enhanced Header */}
-      <header className="relative bg-black/30 backdrop-blur-xl border-b border-white/10 shadow-2xl">
-        <div className="container mx-auto px-6 py-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3 group">
-              <div className="relative">
-                <Code2 className="h-10 w-10 text-purple-400 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12" />
-                <div className="absolute inset-0 bg-purple-400/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
-                  Codevance
-                </h1>
-                <p className="text-xs text-purple-300/70 font-medium tracking-wider">DASHBOARD</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <span className="text-slate-300 text-sm">Welcome back,</span>
-                <p className="text-white font-semibold">{user?.email}</p>
-              </div>
-              <Button 
-                variant="ghost" 
-                onClick={handleLogout}
-                className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-transparent hover:border-white/20"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Header */}
+      <DashboardHeader userEmail={user?.email} onLogout={handleLogout} />
 
+      {/* Stats cards */}
       <div className="relative container mx-auto px-6 py-8 flex-1">
-        {/* Enhanced Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-          {[
-            {
-              title: "Total Problems",
-              value: stats.total,
-              icon: Target,
-              color: "from-blue-500 to-cyan-500",
-              delay: "delay-100"
-            },
-            {
-              title: "Completed",
-              value: stats.completed,
-              subtitle: `${stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}% completion rate`,
-              icon: BarChart3,
-              color: "from-green-500 to-emerald-500",
-              delay: "delay-200"
-            },
-            {
-              title: "This Week",
-              value: stats.thisWeek,
-              subtitle: "Problems added",
-              icon: TrendingUp,
-              color: "from-purple-500 to-pink-500",
-              delay: "delay-300"
-            }
-          ].map((stat, index) => (
-            <Card key={index} className={`bg-black/40 border-white/10 backdrop-blur-xl hover:bg-black/60 transition-all duration-500 hover:scale-105 hover:-translate-y-2 shadow-xl hover:shadow-2xl animate-fade-in ${stat.delay}`}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-slate-300">{stat.title}</CardTitle>
-                <div className={`p-2 rounded-xl bg-gradient-to-r ${stat.color}`}>
-                  <stat.icon className="h-5 w-5 text-white" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-                {stat.subtitle && (
-                  <p className="text-xs text-slate-400">{stat.subtitle}</p>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <StatsCards 
+          total={stats.total} 
+          completed={stats.completed} 
+          thisWeek={stats.thisWeek} 
+        />
 
-        {/* Fixed Tab Bar Alignment */}
-        <Tabs defaultValue="problems" className="space-y-8">
-          <div className="flex justify-center mb-8">
-            <TabsList className="inline-flex bg-black/40 border-white/10 backdrop-blur-xl p-1 rounded-2xl">
-              {[
-                { value: "problems", label: "Problems", icon: Target },
-                { value: "accounts", label: "Accounts", icon: Link },
-                { value: "progress", label: "Progress", icon: TrendingUp },
-                { value: "analytics", label: "Analytics", icon: BarChart3 }
-              ].map((tab) => (
-                <TabsTrigger 
-                  key={tab.value}
-                  value={tab.value} 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white text-white/70 hover:text-white transition-all duration-300 rounded-xl py-3 px-6 flex items-center space-x-2 font-medium whitespace-nowrap"
-                >
-                  <tab.icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-
-          <TabsContent value="problems" className="space-y-8 animate-fade-in">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-                  Problem Collection
-                </h2>
-                <p className="text-slate-400 mt-1">Track and manage your coding challenges</p>
-              </div>
-              <Button 
-                onClick={() => setShowForm(!showForm)}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Problem
-              </Button>
-            </div>
-            
-            {showForm && (
-              <div className="animate-fade-in">
-                <ProblemForm 
-                  onSubmit={handleAddProblem} 
-                  onCancel={() => setShowForm(false)}
-                  problems={problems}
-                />
-              </div>
-            )}
-            
-            <div className="animate-fade-in delay-200">
-              <ProblemList problems={problems} onToggle={handleToggleProblem} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="accounts" className="animate-fade-in">
-            <LinkAccounts onProblemsUpdate={loadProblems} />
-          </TabsContent>
-
-          <TabsContent value="progress" className="animate-fade-in">
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent mb-2">
-                  Topic Progress
-                </h2>
-                <p className="text-slate-400">Track your mastery across different programming topics</p>
-              </div>
-              <TopicProgress problems={problems} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="animate-fade-in">
-            <div className="space-y-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent mb-2">
-                    Performance Analytics
-                  </h2>
-                  <p className="text-slate-400">Visualize your coding journey with detailed insights</p>
-                </div>
-                <ResetStatsDialog onStatsReset={handleStatsReset} />
-              </div>
-              <ProgressChart problems={problems} />
-            </div>
-          </TabsContent>
-        </Tabs>
+        {/* Tabs and content */}
+        <DashboardTabs
+          problems={problems}
+          onAddProblem={handleAddProblem}
+          onToggleProblem={handleToggleProblem}
+          showForm={showForm}
+          setShowForm={setShowForm}
+          loadProblems={loadProblems}
+          onStatsReset={handleStatsReset}
+        />
       </div>
 
       <Footer />
