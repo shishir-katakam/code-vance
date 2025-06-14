@@ -68,16 +68,36 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     return () => subscription.unsubscribe();
   }, [onLogout]);
 
+  // Fetches all user problems regardless of count (works for large datasets)
   const loadProblems = async () => {
     try {
-      const { data, error } = await supabase
-        .from('problems')
-        .select('*')
-        .order('date_added', { ascending: false });
+      let allProblems: any[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      let keepFetching = true;
 
-      if (error) throw error;
+      while (keepFetching) {
+        const { data, error, count } = await supabase
+          .from('problems')
+          .select('*', { count: 'exact', head: false })
+          .order('date_added', { ascending: false })
+          .range(from, from + batchSize - 1);
 
-      const formattedProblems = data.map(problem => ({
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          allProblems = allProblems.concat(data);
+          if (data.length < batchSize) {
+            keepFetching = false; // No more data left to fetch
+          } else {
+            from += batchSize;
+          }
+        } else {
+          keepFetching = false;
+        }
+      }
+
+      const formattedProblems = allProblems.map(problem => ({
         id: problem.id,
         name: problem.name,
         description: problem.description || '',
@@ -86,7 +106,7 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
         language: problem.language || '',
         difficulty: problem.difficulty || '',
         completed: problem.completed,
-        dateAdded: problem.date_added.split('T')[0],
+        dateAdded: problem.date_added ? problem.date_added.split('T')[0] : '',
         url: problem.url || '',
         user_id: problem.user_id
       }));
