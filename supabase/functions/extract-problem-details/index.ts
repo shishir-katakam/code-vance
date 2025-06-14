@@ -34,7 +34,12 @@ serve(async (req) => {
     try {
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
         }
       })
 
@@ -43,6 +48,8 @@ serve(async (req) => {
       }
 
       const html = await response.text()
+      console.log(`Fetched HTML content, length: ${html.length}`)
+      
       problemDetails = extractProblemDetails(html, platform, url)
       
     } catch (error) {
@@ -50,6 +57,7 @@ serve(async (req) => {
       throw new Error('Unable to fetch problem details from the provided URL')
     }
 
+    console.log('Extracted details:', problemDetails)
     return new Response(JSON.stringify(problemDetails), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -87,46 +95,126 @@ function extractProblemDetails(html: string, platform: string, url: string) {
   }
 
   if (platform === 'LeetCode') {
-    // Extract title
-    const titleMatch = html.match(/<title[^>]*>([^<]+(?:LeetCode|Solution))/i) ||
-                     html.match(/data-cy="question-title"[^>]*>([^<]+)/i) ||
-                     html.match(/"questionTitle":"([^"]+)"/i) ||
-                     html.match(/class="[^"]*title[^"]*"[^>]*>([^<]+)/i)
+    console.log('Processing LeetCode URL...')
     
+    // Extract problem name from URL path as fallback
+    const urlPath = new URL(url).pathname
+    const problemSlug = urlPath.split('/').filter(p => p)[1] // Get the problem slug
+    
+    // Extract title - multiple approaches
+    let titleMatch = html.match(/<title[^>]*>([^<]+)/i)
     if (titleMatch) {
-      details.name = titleMatch[1].replace(/\s*-\s*LeetCode.*$/i, '').trim()
+      let title = titleMatch[1].trim()
+      // Clean up LeetCode title
+      title = title.replace(/\s*-\s*LeetCode.*$/i, '').trim()
+      title = title.replace(/^\d+\.\s*/, '').trim() // Remove number prefix
+      details.name = title
+    }
+    
+    // If title extraction failed, use URL slug
+    if (!details.name && problemSlug) {
+      details.name = problemSlug.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ')
     }
 
-    // Extract difficulty
-    const difficultyMatch = html.match(/"difficulty":"([^"]+)"/i) ||
-                           html.match(/class="[^"]*difficulty[^"]*"[^>]*>([^<]+)/i) ||
-                           html.match(/Difficulty:\s*<[^>]*>([^<]+)/i)
+    // Extract difficulty - multiple patterns
+    const difficultyPatterns = [
+      /class="[^"]*text-difficulty-[^"]*"[^>]*>([^<]+)/gi,
+      /"difficulty"\s*:\s*"([^"]+)"/gi,
+      /Difficulty[^:]*:[^>]*>([^<]+)/gi,
+      /class="[^"]*difficulty[^"]*"[^>]*>([^<]+)/gi
+    ]
     
-    if (difficultyMatch) {
-      details.difficulty = capitalizeFirst(difficultyMatch[1].toLowerCase())
+    for (const pattern of difficultyPatterns) {
+      const match = html.match(pattern)
+      if (match) {
+        const difficulty = match[1].trim().toLowerCase()
+        if (difficulty.includes('easy')) details.difficulty = 'Easy'
+        else if (difficulty.includes('medium')) details.difficulty = 'Medium'
+        else if (difficulty.includes('hard')) details.difficulty = 'Hard'
+        if (details.difficulty) break
+      }
     }
 
-    // Extract description
-    const descMatch = html.match(/"content":"([^"]+)"/i) ||
-                     html.match(/class="[^"]*content[^"]*"[^>]*>([^<]+)/i)
+    // Extract description - look for problem statement
+    const descPatterns = [
+      /<div[^>]*class="[^"]*elfjS[^"]*"[^>]*>(.*?)<\/div>/s,
+      /<div[^>]*class="[^"]*content[^"]*"[^>]*>(.*?)<\/div>/s,
+      /<p[^>]*class="[^"]*mb-3[^"]*"[^>]*>(.*?)<\/p>/s,
+      /"content"\s*:\s*"([^"]+)"/gi
+    ]
     
-    if (descMatch) {
-      details.description = descMatch[1].substring(0, 200).replace(/\\n/g, ' ').trim() + '...'
+    for (const pattern of descPatterns) {
+      const match = html.match(pattern)
+      if (match) {
+        let desc = match[1].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+        if (desc.length > 50) {
+          details.description = desc.substring(0, 200) + '...'
+          break
+        }
+      }
     }
 
-    // Extract topics
-    const topicsMatch = html.match(/"topicTags":\[([^\]]+)\]/i) ||
-                       html.match(/Topics?[^:]*:([^<]+)/i)
+    // Extract topics/tags
+    const topicPatterns = [
+      /"topicTags"\s*:\s*\[(.*?)\]/s,
+      /class="[^"]*topic-tag[^"]*"[^>]*>([^<]+)/gi,
+      /data-topic="([^"]+)"/gi
+    ]
     
-    if (topicsMatch) {
-      const topicString = topicsMatch[1]
-      if (topicString.includes('Array')) details.topic = 'Arrays'
-      else if (topicString.includes('String')) details.topic = 'Strings'
-      else if (topicString.includes('Tree')) details.topic = 'Trees'
-      else if (topicString.includes('Graph')) details.topic = 'Graphs'
-      else if (topicString.includes('Dynamic')) details.topic = 'Dynamic Programming'
-      else if (topicString.includes('Hash')) details.topic = 'Hash Tables'
-      else details.topic = 'Arrays' // Default
+    const topicMappings = {
+      'array': 'Arrays',
+      'string': 'Strings',
+      'hash-table': 'Hash Tables',
+      'dynamic-programming': 'Dynamic Programming',
+      'math': 'Math',
+      'two-pointers': 'Arrays',
+      'binary-search': 'Searching',
+      'tree': 'Trees',
+      'depth-first-search': 'Trees',
+      'breadth-first-search': 'Trees',
+      'graph': 'Graphs',
+      'backtracking': 'Backtracking',
+      'stack': 'Stacks',
+      'heap': 'Queues',
+      'greedy': 'Greedy',
+      'bit-manipulation': 'Bit Manipulation',
+      'linked-list': 'Linked Lists',
+      'sorting': 'Sorting'
+    }
+    
+    for (const pattern of topicPatterns) {
+      const matches = html.match(pattern)
+      if (matches) {
+        const topicText = matches[1] || matches[0]
+        const lowerTopic = topicText.toLowerCase()
+        
+        // Find matching topic
+        for (const [key, value] of Object.entries(topicMappings)) {
+          if (lowerTopic.includes(key)) {
+            details.topic = value
+            break
+          }
+        }
+        if (details.topic) break
+      }
+    }
+
+    // Enhanced topic detection from problem name
+    if (!details.topic && details.name) {
+      const name = details.name.toLowerCase()
+      if (name.includes('parentheses') || name.includes('bracket') || name.includes('valid')) {
+        details.topic = 'Stacks'
+      } else if (name.includes('substring') || name.includes('string')) {
+        details.topic = 'Strings'
+      } else if (name.includes('array') || name.includes('sum') || name.includes('numbers')) {
+        details.topic = 'Arrays'
+      } else if (name.includes('tree') || name.includes('binary')) {
+        details.topic = 'Trees'
+      } else if (name.includes('dynamic') || name.includes('dp')) {
+        details.topic = 'Dynamic Programming'
+      }
     }
 
   } else if (platform === 'GeeksforGeeks') {
@@ -146,7 +234,6 @@ function extractProblemDetails(html: string, platform: string, url: string) {
       details.difficulty = capitalizeFirst(difficultyMatch[1].toLowerCase())
     }
 
-    // Basic description from title or meta
     details.description = `GeeksforGeeks problem: ${details.name}. Practice coding and improve your skills.`
 
   } else if (platform === 'HackerRank') {
@@ -176,18 +263,25 @@ function extractProblemDetails(html: string, platform: string, url: string) {
     }
     
     details.description = `Coding problem from ${platform}: ${details.name}`
-    details.difficulty = 'Medium' // Default difficulty
-    details.topic = 'Arrays' // Default topic
+    details.difficulty = 'Medium'
+    details.topic = 'Arrays'
   }
 
-  // Fallbacks if extraction failed
+  // Enhanced fallbacks
   if (!details.name) {
     const urlPath = new URL(url).pathname
-    details.name = urlPath.split('/').pop()?.replace(/[-_]/g, ' ') || 'Unknown Problem'
+    const problemSlug = urlPath.split('/').filter(p => p)[1]
+    if (problemSlug) {
+      details.name = problemSlug.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ')
+    } else {
+      details.name = 'Unknown Problem'
+    }
   }
   
   if (!details.description) {
-    details.description = `Problem from ${platform}: ${details.name}`
+    details.description = `Problem from ${platform}: ${details.name}. Click the URL to view full problem statement.`
   }
   
   if (!details.difficulty) {
@@ -195,9 +289,32 @@ function extractProblemDetails(html: string, platform: string, url: string) {
   }
   
   if (!details.topic) {
-    details.topic = 'Arrays'
+    // Smart topic detection based on problem name
+    const name = details.name.toLowerCase()
+    if (name.includes('parentheses') || name.includes('bracket') || name.includes('stack')) {
+      details.topic = 'Stacks'
+    } else if (name.includes('substring') || name.includes('string') || name.includes('palindrome')) {
+      details.topic = 'Strings'
+    } else if (name.includes('tree') || name.includes('binary') || name.includes('node')) {
+      details.topic = 'Trees'
+    } else if (name.includes('graph') || name.includes('path') || name.includes('connected')) {
+      details.topic = 'Graphs'
+    } else if (name.includes('dynamic') || name.includes('dp') || name.includes('climb') || name.includes('coin')) {
+      details.topic = 'Dynamic Programming'
+    } else if (name.includes('sort') || name.includes('merge') || name.includes('quick')) {
+      details.topic = 'Sorting'
+    } else if (name.includes('search') || name.includes('find') || name.includes('binary')) {
+      details.topic = 'Searching'
+    } else if (name.includes('hash') || name.includes('map') || name.includes('duplicate')) {
+      details.topic = 'Hash Tables'
+    } else if (name.includes('linked') || name.includes('list') || name.includes('reverse')) {
+      details.topic = 'Linked Lists'
+    } else {
+      details.topic = 'Arrays'
+    }
   }
 
+  console.log('Final extracted details:', details)
   return details
 }
 
