@@ -9,13 +9,127 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      linked_accounts: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          last_sync: string | null
+          platform: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync?: string | null
+          platform: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync?: string | null
+          platform?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      platform_stats: {
+        Row: {
+          id: string
+          last_updated: string
+          total_platforms: number
+          total_problems: number
+          total_users: number
+        }
+        Insert: {
+          id?: string
+          last_updated?: string
+          total_platforms?: number
+          total_problems?: number
+          total_users?: number
+        }
+        Update: {
+          id?: string
+          last_updated?: string
+          total_platforms?: number
+          total_problems?: number
+          total_users?: number
+        }
+        Relationships: []
+      }
+      problems: {
+        Row: {
+          completed: boolean
+          date_added: string
+          description: string | null
+          difficulty: string | null
+          id: number
+          language: string | null
+          name: string
+          platform: string | null
+          platform_problem_id: string | null
+          platform_url: string | null
+          solved_date: string | null
+          synced_from_platform: boolean | null
+          topic: string | null
+          url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          completed?: boolean
+          date_added?: string
+          description?: string | null
+          difficulty?: string | null
+          id?: number
+          language?: string | null
+          name: string
+          platform?: string | null
+          platform_problem_id?: string | null
+          platform_url?: string | null
+          solved_date?: string | null
+          synced_from_platform?: boolean | null
+          topic?: string | null
+          url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          completed?: boolean
+          date_added?: string
+          description?: string | null
+          difficulty?: string | null
+          id?: number
+          language?: string | null
+          name?: string
+          platform?: string | null
+          platform_problem_id?: string | null
+          platform_url?: string | null
+          solved_date?: string | null
+          synced_from_platform?: boolean | null
+          topic?: string | null
+          url?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      reset_platform_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_platform_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
