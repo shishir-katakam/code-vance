@@ -69,22 +69,24 @@ const ResetStatsDialog = ({ onStatsReset }: ResetStatsDialogProps) => {
             <AlertTriangle className="w-6 h-6 text-red-400" />
             Reset Platform Statistics
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-slate-300 space-y-3">
-            <p className="font-medium text-red-300">
-              ⚠️ This action cannot be undone!
-            </p>
-            <p>
-              This will permanently reset all platform statistics including:
-            </p>
-            <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>Total users count</li>
-              <li>Total problems count</li>
-              <li>All historical data</li>
-            </ul>
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-4">
-              <p className="text-red-200 text-sm font-medium">
-                Are you absolutely sure you want to proceed?
-              </p>
+          <AlertDialogDescription className="text-slate-300">
+            <div className="space-y-3">
+              <div className="font-medium text-red-300">
+                ⚠️ This action cannot be undone!
+              </div>
+              <div>
+                This will permanently reset all platform statistics including:
+              </div>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Total users count</li>
+                <li>Total problems count</li>
+                <li>All historical data</li>
+              </ul>
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-4">
+                <div className="text-red-200 text-sm font-medium">
+                  Are you absolutely sure you want to proceed?
+                </div>
+              </div>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>

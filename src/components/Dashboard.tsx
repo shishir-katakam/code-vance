@@ -198,8 +198,11 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     }
   };
 
-  const handleStatsReset = () => {
-    // Force refresh of stats after reset
+  const handleStatsReset = async () => {
+    // Reload problems data after stats reset
+    await loadProblems();
+    
+    // Force a complete refresh to ensure all stats are updated
     window.location.reload();
   };
 
