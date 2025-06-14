@@ -39,8 +39,13 @@ const TOPIC_MASTERY_REQUIREMENTS = {
 };
 
 const TopicProgress = ({ problems }: TopicProgressProps) => {
-  // Calculate topic progress with realistic mastery requirements
-  const topicStats = problems.reduce((acc, problem) => {
+  // Filter for problems with a valid, non-empty topic
+  const filteredProblems = problems.filter(
+    (problem) => problem.topic && problem.topic.trim() !== ''
+  );
+
+  // Calculate topic progress only for problems with topics
+  const topicStats = filteredProblems.reduce((acc, problem) => {
     const key = `${problem.topic}-${problem.language}`;
     if (!acc[key]) {
       acc[key] = {
@@ -64,7 +69,6 @@ const TopicProgress = ({ problems }: TopicProgressProps) => {
     const masteryPercentage = Math.min(90, Math.round((stat.completed / stat.requiredForMastery) * 100));
     // Calculate progress within current problems
     const currentProgress = Math.round((stat.completed / stat.total) * 100);
-    
     return {
       ...stat,
       percentage: masteryPercentage,
@@ -99,6 +103,25 @@ const TopicProgress = ({ problems }: TopicProgressProps) => {
     }
   };
 
+  // If no topical data, display a helpful message
+  if (topicProgress.length === 0) {
+    return (
+      <Card className="bg-black/40 border-white/10 backdrop-blur-md">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center">
+            <Brain className="h-5 w-5 mr-2 text-purple-400" />
+            Topic Mastery
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-slate-300 text-center">
+            No topic data available yet. Try adding problems directly through this site and use AI analysis for best results!
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Topic Mastery */}
@@ -118,8 +141,8 @@ const TopicProgress = ({ problems }: TopicProgressProps) => {
                   <Badge variant="outline" className="text-xs text-gray-300 border-gray-500">
                     {item.language}
                   </Badge>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className={`text-xs border-gray-500 ${getProgressColor(item.percentage)}`}
                   >
                     {getMasteryLevel(item.percentage)}
