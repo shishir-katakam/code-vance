@@ -128,6 +128,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      reset_platform_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_platform_stats: {
         Args: Record<PropertyKey, never>
         Returns: undefined

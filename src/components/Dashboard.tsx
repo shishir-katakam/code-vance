@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +9,7 @@ import TopicProgress from './TopicProgress';
 import ProgressChart from './ProgressChart';
 import LinkAccounts from './LinkAccounts';
 import Footer from './Footer';
+import ResetStatsDialog from './ResetStatsDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -198,6 +198,11 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     }
   };
 
+  const handleStatsReset = () => {
+    // Force refresh of stats after reset
+    window.location.reload();
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -378,11 +383,14 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
 
           <TabsContent value="analytics" className="animate-fade-in">
             <div className="space-y-6">
-              <div>
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent mb-2">
-                  Performance Analytics
-                </h2>
-                <p className="text-slate-400">Visualize your coding journey with detailed insights</p>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent mb-2">
+                    Performance Analytics
+                  </h2>
+                  <p className="text-slate-400">Visualize your coding journey with detailed insights</p>
+                </div>
+                <ResetStatsDialog onStatsReset={handleStatsReset} />
               </div>
               <ProgressChart problems={problems} />
             </div>
