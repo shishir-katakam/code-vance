@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -480,20 +479,20 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
                 <SelectTrigger className="w-full bg-black/60 border-white/30 text-white hover:bg-black/80 focus:bg-black/80 transition-all duration-300">
                   <SelectValue placeholder="Select Platform" />
                 </SelectTrigger>
-                <SelectContent className="bg-black/95 border-white/20 backdrop-blur-md">
+                <SelectContent className="bg-black/95 border-white/20 backdrop-blur-md z-50">
                   {platforms.map((platform) => (
                     <SelectItem 
                       key={platform.name} 
                       value={platform.name}
-                      className="text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer py-4 transition-all duration-200"
+                      className="text-white hover:bg-white/20 focus:bg-white/20 cursor-pointer py-4 transition-all duration-200 data-[highlighted]:bg-white/20 data-[highlighted]:text-white"
                     >
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-10 h-10 rounded-xl ${platform.color} flex items-center justify-center text-white font-bold shadow-lg`}>
+                      <div className="flex items-center space-x-4 w-full">
+                        <div className={`w-10 h-10 rounded-xl ${platform.color} flex items-center justify-center text-white font-bold shadow-lg flex-shrink-0`}>
                           {platform.icon}
                         </div>
-                        <div>
-                          <div className="font-semibold">{platform.name}</div>
-                          <div className="text-xs text-gray-400">{platform.description}</div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-white">{platform.name}</div>
+                          <div className="text-xs text-gray-300">{platform.description}</div>
                         </div>
                       </div>
                     </SelectItem>

@@ -305,25 +305,27 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
           ))}
         </div>
 
-        {/* Enhanced Tabs */}
+        {/* Enhanced Tabs - Fixed alignment and spacing */}
         <Tabs defaultValue="problems" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4 bg-black/40 border-white/10 backdrop-blur-xl p-2 rounded-2xl">
-            {[
-              { value: "problems", label: "Problems", icon: Target },
-              { value: "accounts", label: "Accounts", icon: Link },
-              { value: "progress", label: "Progress", icon: TrendingUp },
-              { value: "analytics", label: "Analytics", icon: BarChart3 }
-            ].map((tab) => (
-              <TabsTrigger 
-                key={tab.value}
-                value={tab.value} 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300 rounded-xl py-3 px-6 flex items-center space-x-2 font-medium"
-              >
-                <tab.icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="w-full flex justify-center">
+            <TabsList className="grid grid-cols-4 bg-black/40 border-white/10 backdrop-blur-xl p-1 rounded-2xl gap-1 w-full max-w-2xl">
+              {[
+                { value: "problems", label: "Problems", icon: Target },
+                { value: "accounts", label: "Accounts", icon: Link },
+                { value: "progress", label: "Progress", icon: TrendingUp },
+                { value: "analytics", label: "Analytics", icon: BarChart3 }
+              ].map((tab) => (
+                <TabsTrigger 
+                  key={tab.value}
+                  value={tab.value} 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white text-white/70 hover:text-white transition-all duration-300 rounded-xl py-3 px-4 flex items-center justify-center space-x-2 font-medium min-h-[48px]"
+                >
+                  <tab.icon className="w-4 h-4" />
+                  <span className="hidden sm:block">{tab.label}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           <TabsContent value="problems" className="space-y-8 animate-fade-in">
             <div className="flex justify-between items-center">
