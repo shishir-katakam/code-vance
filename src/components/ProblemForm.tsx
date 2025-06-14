@@ -1,15 +1,14 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, Brain, TrendingUp, Target, Link, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Problem {
   id: number;
@@ -31,7 +30,6 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
     description: '',
     platform: '',
     topic: '',
-    language: '',
     difficulty: '',
     url: '',
     completed: false
@@ -43,7 +41,6 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
   const { toast } = useToast();
 
   const platforms = ['LeetCode', 'CodeChef', 'GeeksforGeeks', 'HackerRank', 'Codeforces', 'AtCoder'];
-  const languages = ['Python', 'JavaScript', 'Java', 'C++', 'C', 'Go', 'Rust', 'TypeScript'];
   const topics = ['Arrays', 'Strings', 'Linked Lists', 'Trees', 'Graphs', 'Dynamic Programming', 'Greedy', 'Backtracking', 'Stacks', 'Queues', 'Hash Tables', 'Sorting', 'Searching', 'Math', 'Bit Manipulation'];
   const difficulties = ['Easy', 'Medium', 'Hard'];
 
@@ -72,19 +69,19 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
 
       if (error) throw error;
 
-      setFormData(prev => ({
-        ...prev,
+      setFormData({
         name: data.name,
         description: data.description,
         platform: data.platform,
         topic: data.topic,
         difficulty: data.difficulty,
-        url: data.url
-      }));
+        url: data.url,
+        completed: false
+      });
 
       toast({
-        title: "Details Extracted",
-        description: `Problem details extracted successfully from ${data.platform}`,
+        title: "Details Extracted Successfully",
+        description: `All problem details extracted from ${data.platform}. Ready to add!`,
       });
     } catch (error) {
       console.error('Extraction error:', error);
@@ -147,10 +144,10 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.topic || !formData.difficulty) {
+    if (!formData.name || !formData.topic || !formData.difficulty) {
       toast({
         title: "Missing Required Fields",
-        description: "Please select topic and difficulty, or analyze with AI first.",
+        description: "Please extract from URL or fill all required fields manually.",
         variant: "destructive",
       });
       return;
@@ -169,10 +166,10 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
         </Button>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="manual" className="space-y-4">
+        <Tabs defaultValue="url" className="space-y-4">
           <TabsList className="grid w-full grid-cols-2 bg-white/5">
-            <TabsTrigger value="manual" className="text-white data-[state=active]:bg-purple-600">Manual Entry</TabsTrigger>
             <TabsTrigger value="url" className="text-white data-[state=active]:bg-purple-600">From URL</TabsTrigger>
+            <TabsTrigger value="manual" className="text-white data-[state=active]:bg-purple-600">Manual Entry</TabsTrigger>
           </TabsList>
 
           <TabsContent value="url" className="space-y-4">
@@ -201,19 +198,35 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
                   </Button>
                 </div>
                 <p className="text-xs text-gray-400">
-                  Supports LeetCode, GeeksforGeeks, HackerRank, Codeforces, CodeChef, and AtCoder
+                  Paste any problem URL and click extract - all details will be filled automatically!
                 </p>
               </div>
 
-              {(formData.name || formData.description) && (
+              {(formData.name && formData.description && formData.platform) && (
                 <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                  <h4 className="text-white font-medium mb-2">Extracted Details:</h4>
-                  <div className="space-y-1 text-sm text-gray-300">
-                    <p><strong>Name:</strong> {formData.name}</p>
-                    <p><strong>Platform:</strong> {formData.platform}</p>
-                    <p><strong>Difficulty:</strong> {formData.difficulty}</p>
-                    <p><strong>Topic:</strong> {formData.topic}</p>
-                    <p><strong>Description:</strong> {formData.description}</p>
+                  <h4 className="text-white font-medium mb-2 flex items-center">
+                    <span className="text-green-400 mr-2">✓</span>
+                    Problem Details Extracted Successfully
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-300">
+                    <div>
+                      <p><strong>Name:</strong> {formData.name}</p>
+                      <p><strong>Platform:</strong> {formData.platform}</p>
+                      <p><strong>Difficulty:</strong> {formData.difficulty}</p>
+                    </div>
+                    <div>
+                      <p><strong>Topic:</strong> {formData.topic}</p>
+                      <p className="mt-2"><strong>Description:</strong></p>
+                      <p className="text-xs text-gray-400 mt-1">{formData.description.substring(0, 100)}...</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-green-500/20">
+                    <Button 
+                      onClick={handleSubmit}
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    >
+                      Add Problem to Collection
+                    </Button>
                   </div>
                 </div>
               )}
@@ -221,56 +234,120 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
           </TabsContent>
 
           <TabsContent value="manual" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-white">Problem Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
+                    placeholder="e.g., Two Sum"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="platform" className="text-white">Platform</Label>
+                  <Select 
+                    value={formData.platform}
+                    onValueChange={(value) => setFormData({ ...formData, platform: value })}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Select platform" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {platforms.map((platform) => (
+                        <SelectItem key={platform} value={platform}>{platform}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-white">Problem Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                <Label htmlFor="description" className="text-white">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
-                  placeholder="e.g., Two Sum"
+                  placeholder="Brief description of the problem..."
+                  rows={3}
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="platform" className="text-white">Platform</Label>
-                <Select onValueChange={(value) => setFormData({ ...formData, platform: value })}>
-                  <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                    <SelectValue placeholder="Select platform" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {platforms.map((platform) => (
-                      <SelectItem key={platform} value={platform}>{platform}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+              <div className="flex justify-center">
+                <Button
+                  type="button"
+                  onClick={analyzeWithAI}
+                  disabled={isAnalyzing || !formData.name || !formData.description}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  <Brain className="h-4 w-4 mr-2" />
+                  {isAnalyzing ? 'Analyzing with AI...' : 'Analyze with AI (Optional)'}
+                </Button>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-white">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
-                placeholder="Brief description of the problem..."
-                rows={3}
-                required
-              />
-            </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="topic" className="text-white">Topic</Label>
+                  <Select 
+                    value={formData.topic} 
+                    onValueChange={(value) => setFormData({ ...formData, topic: value })}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Select topic" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {topics.map((topic) => (
+                        <SelectItem key={topic} value={topic}>{topic}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="difficulty" className="text-white">Difficulty</Label>
+                  <Select 
+                    value={formData.difficulty} 
+                    onValueChange={(value) => setFormData({ ...formData, difficulty: value })}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Select difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {difficulties.map((difficulty) => (
+                        <SelectItem key={difficulty} value={difficulty}>{difficulty}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-            <div className="flex justify-center">
-              <Button
-                type="button"
-                onClick={analyzeWithAI}
-                disabled={isAnalyzing || !formData.name || !formData.description}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                <Brain className="h-4 w-4 mr-2" />
-                {isAnalyzing ? 'Analyzing with AI...' : 'Analyze with AI (Optional)'}
-              </Button>
+              <div className="space-y-2">
+                <Label htmlFor="url" className="text-white">Problem URL (Optional)</Label>
+                <Input
+                  id="url"
+                  type="url"
+                  value={formData.url}
+                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
+                  placeholder="https://leetcode.com/problems/two-sum/"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button type="button" variant="ghost" onClick={onCancel} className="text-gray-300">
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSubmit}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                >
+                  Add Problem
+                </Button>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
@@ -328,81 +405,6 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
             </div>
           </div>
         )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="topic" className="text-white">Topic</Label>
-              <Select 
-                value={formData.topic} 
-                onValueChange={(value) => setFormData({ ...formData, topic: value })}
-              >
-                <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                  <SelectValue placeholder="Select topic" />
-                </SelectTrigger>
-                <SelectContent>
-                  {topics.map((topic) => (
-                    <SelectItem key={topic} value={topic}>{topic}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="difficulty" className="text-white">Difficulty</Label>
-              <Select 
-                value={formData.difficulty} 
-                onValueChange={(value) => setFormData({ ...formData, difficulty: value })}
-              >
-                <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                  <SelectValue placeholder="Select difficulty" />
-                </SelectTrigger>
-                <SelectContent>
-                  {difficulties.map((difficulty) => (
-                    <SelectItem key={difficulty} value={difficulty}>{difficulty}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="language" className="text-white">Programming Language</Label>
-            <Select onValueChange={(value) => setFormData({ ...formData, language: value })}>
-              <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                {languages.map((language) => (
-                  <SelectItem key={language} value={language}>{language}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="url" className="text-white">Problem URL (Optional)</Label>
-            <Input
-              id="url"
-              type="url"
-              value={formData.url}
-              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-              className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
-              placeholder="https://leetcode.com/problems/two-sum/"
-            />
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="ghost" onClick={onCancel} className="text-gray-300">
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              Add Problem
-            </Button>
-          </div>
-        </form>
       </CardContent>
     </Card>
   );
