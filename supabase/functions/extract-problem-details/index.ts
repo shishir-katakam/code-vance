@@ -109,6 +109,235 @@ serve(async (req) => {
 
       console.log('Extracted problem details from LeetCode:', problemDetails)
 
+    } else if (platform === 'GeeksforGeeks') {
+      // Extract problem slug (after /problems/ or /problem-of-the-day/ or /, fallback)
+      let slug = '';
+      let title = '';
+      let difficulty = '';
+      let topic = '';
+      let description = '';
+      try {
+        let match = parsedUrl.pathname.match(/\/problems?\/([^\/#?\s]+)/);
+        if (!match) match = parsedUrl.pathname.match(/\/problem-of-the-day\/([^\/#?\s]+)/);
+        if (match) slug = match[1];
+
+        // Fetch problem HTML page
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0',
+            'Accept': 'text/html',
+          }
+        });
+        if (!response.ok) throw new Error('Failed to fetch GFG problem page');
+        const html = await response.text();
+
+        // Extract title
+        let titleMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/i) || html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        title = titleMatch ? titleMatch[1].replace(/\s*-\s*GeeksforGeeks.*/i, '').trim() : slug;
+        // Description: usually inside <div class="problem-statement"> or <div id="problemStatement">
+        let descMatch = html.match(/<div[^>]+(?:class="problem-statement"|id="problemStatement")[^>]*>([\s\S]+?)<\/div>/i);
+        if (!descMatch) {
+          // Try main content inside <article>
+          descMatch = html.match(/<article[^>]*>([\s\S]+?)<\/article>/i);
+        }
+        if (descMatch) {
+          description = descMatch[1].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        } else {
+          // Fallback to meta description
+          let metaMatch = html.match(/<meta[^>]+name="description"[^>]+content="([^"]*)"/i);
+          if (metaMatch) description = metaMatch[1];
+        }
+        // Difficulty: look for 'Difficulty: <span>' or keywords in the page
+        let diffMatch = html.match(/Difficulty:\s*<\/strong>\s*([^<\n]+)/i);
+        if (!diffMatch) diffMatch = html.match(/difficulty[^>]*>\s*([^<]+)/i);
+        difficulty = diffMatch ? capitalizeFirst(diffMatch[1].trim().toLowerCase()) : '';
+        // Topic: look for <a ...> tag with /tags/ or meta keywords
+        let topicMatch = html.match(/<a[^>]+href="\/tags\/[^"]+"[^>]*>([^<]+)<\/a>/i);
+        if (topicMatch) {
+          topic = topicMatch[1].trim();
+        } else {
+          // Try to guess from meta keywords
+          let metaKeywords = html.match(/<meta[^>]+name="keywords"[^>]+content="([^"]*)"/i);
+          if (metaKeywords) {
+            topic = metaKeywords[1].split(',')[0].trim();
+          }
+        }
+        // Final fallback
+        if (!description) description = `GeeksforGeeks problem: ${title}. Practice coding and improve your skills.`;
+        if (!topic) topic = guessTopic(title);
+
+        problemDetails = {
+          name: title,
+          description: description.substring(0, 480) + (description.length > 480 ? "..." : ""),
+          difficulty: difficulty || 'Medium',
+          topic: topic,
+          platform: "GeeksforGeeks",
+          url: url,
+        };
+        console.log('Extracted GeeksforGeeks details:', problemDetails);
+
+      } catch (err) {
+        console.error('GFG extraction failed:', err);
+        throw new Error('Failed to extract GeeksforGeeks problem details.');
+      }
+
+    } else if (platform === 'HackerRank') {
+      let title = '', description = '', difficulty = '', topic = '';
+      try {
+        // Fetch problem page
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0',
+            'Accept': 'text/html',
+          }
+        });
+        if (!response.ok) throw new Error('Failed to fetch HackerRank problem page');
+        const html = await response.text();
+
+        // Extract title from <title> or <h1>
+        let titleMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/i) || html.match(/<title[^>]*>([^<]+)/i);
+        title = titleMatch ? titleMatch[1].replace(/\s*\|\s*HackerRank.*$/i, '').trim() : '';
+        // Description: <div class="challenge_problem_statement"> or <div class="problem-statement">
+        let descMatch = html.match(/<div[^>]*class="challenge_problem_statement"[^>]*>([\s\S]+?)<\/div>/i) ||
+          html.match(/<div[^>]*class="problem-statement"[^>]*>([\s\S]+?)<\/div>/i);
+        if (descMatch) {
+          description = descMatch[1].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        } else {
+          // Fallback to <meta name="description">
+          let metaMatch = html.match(/<meta[^>]+name="description"[^>]+content="([^"]*)"/i);
+          if (metaMatch) description = metaMatch[1];
+        }
+        // Difficulty from JavaScript JSON blob or in the HTML somewhere
+        let diffMatch = html.match(/Difficulty:<\/b>\s*([A-Za-z]+)/) ||
+                        html.match(/"difficulty":"([A-Za-z]+)"/) ||
+                        html.match(/difficulty[^>]*>([^<]+)/i);
+        difficulty = diffMatch ? capitalizeFirst(diffMatch[1].toLowerCase()) : '';
+        // Topic: look for breadcrumbs/tags or guess from title
+        let topicMatch = html.match(/<a[^>]+href="\/domains\/[\w-\/]+"[^>]*>([^<]+)<\/a>/i);
+        if (topicMatch) topic = topicMatch[1].trim();
+        if (!topic) topic = guessTopic(title);
+
+        problemDetails = {
+          name: title || 'HackerRank Challenge',
+          description: description.substring(0, 480) + (description.length > 480 ? "..." : ""),
+          difficulty: difficulty || 'Medium',
+          topic: topic,
+          platform: "HackerRank",
+          url: url,
+        };
+        console.log('Extracted HackerRank details:', problemDetails);
+
+      } catch (err) {
+        console.error('HackerRank extraction failed:', err);
+        throw new Error('Failed to extract HackerRank problem details.');
+      }
+
+    } else if (platform === 'Codeforces') {
+      let title = '', description = '', difficulty = '', topic = '';
+      try {
+        // Fetch problem page
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0',
+            'Accept': 'text/html',
+          }
+        });
+        if (!response.ok) throw new Error('Failed to fetch Codeforces problem page');
+        const html = await response.text();
+
+        // Title: <div class="title"> or <title>
+        let titleMatch = html.match(/<div[^>]*class="title"[^>]*>([^<]+)<\/div>/i) ||
+          html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        title = titleMatch ? titleMatch[1].replace(/\s*-\s*Codeforces.*$/i, '').trim() : '';
+        // Description: <div class="problem-statement">
+        let descMatch = html.match(/<div[^>]*class="problem-statement"[^>]*>([\s\S]+?)<\/div>/i);
+        if (descMatch) {
+          description = descMatch[1].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        } else {
+          // Fallback: the first <div class="problem-description">
+          let altDesc = html.match(/<div[^>]*class="problem-description"[^>]*>([\s\S]+?)<\/div>/i);
+          if (altDesc) {
+            description = altDesc[1].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+          }
+        }
+        // Difficulty: not public on Codeforces, guess from contest (div1=hard, div2=medium, div3=easy)
+        let contestInfo = html.match(/(Div\. ?[123])/i);
+        if (contestInfo) {
+          const div = contestInfo[1].toLowerCase();
+          if (div.includes('1')) difficulty = 'Hard';
+          else if (div.includes('2')) difficulty = 'Medium';
+          else if (div.includes('3')) difficulty = 'Easy';
+        }
+        // Topic: look for tag-box or guess
+        let topicMatch = html.match(/<span[^>]*class="tag-box[^"]*"[^>]*>([^<]+)<\/span>/i);
+        topic = topicMatch ? topicMatch[1].trim() : guessTopic(title);
+
+        problemDetails = {
+          name: title || 'Codeforces Problem',
+          description: description.substring(0, 480) + (description.length > 480 ? "..." : ""),
+          difficulty: difficulty || 'Medium',
+          topic: topic,
+          platform: "Codeforces",
+          url: url,
+        };
+        console.log('Extracted Codeforces details:', problemDetails);
+
+      } catch (err) {
+        console.error('Codeforces extraction failed:', err);
+        throw new Error('Failed to extract Codeforces problem details.');
+      }
+
+    } else if (platform === 'CodeChef') {
+      let title = '', description = '', difficulty = '', topic = '';
+      try {
+        // Fetch problem page
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0',
+            'Accept': 'text/html',
+          }
+        });
+        if (!response.ok) throw new Error('Failed to fetch CodeChef problem page');
+        const html = await response.text();
+
+        // Title: <title> or <h1>
+        let titleMatch = html.match(/<title[^>]*>([^<]+)/i) ||
+                         html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+        title = titleMatch ? titleMatch[1].replace(/\s*-?\s*CodeChef.*$/i, '').trim() : '';
+        // Description: <div class="problem-statement">, <section> etc
+        let descMatch = html.match(/<div[^>]*class="problem-statement"[^>]*>([\s\S]+?)<\/div>/i) ||
+                        html.match(/<section[^>]*>([\s\S]+?)<\/section>/i);
+        if (descMatch) {
+          description = descMatch[1].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        } else {
+          // Fallback: meta description
+          let metaMatch = html.match(/<meta[^>]+name="description"[^>]+content="([^"]*)"/i);
+          if (metaMatch) description = metaMatch[1];
+        }
+        // Difficulty: usually shown as "Difficulty: Easy/Medium/Hard" on page
+        let diffMatch = html.match(/Difficulty:\s*<\/strong>\s*([^<\n]+)/i) ||
+                        html.match(/"difficulty":"([A-Za-z]+)"/) ||
+                        html.match(/difficulty[^>]*>([^<]+)/i);
+        difficulty = diffMatch ? capitalizeFirst(diffMatch[1].toLowerCase()) : '';
+        // Topic: look for <a ...> tag with /tags/ or meta keywords
+        let topicMatch = html.match(/<a[^>]+href="\/tags\/[^"]+"[^>]*>([^<]+)<\/a>/i);
+        if (topicMatch) topic = topicMatch[1].trim();
+        if (!topic) topic = guessTopic(title);
+
+        problemDetails = {
+          name: title || 'CodeChef Problem',
+          description: description.substring(0, 480) + (description.length > 480 ? "..." : ""),
+          difficulty: difficulty || 'Medium',
+          topic: topic,
+          platform: "CodeChef",
+          url: url,
+        };
+        console.log('Extracted CodeChef details:', problemDetails);
+
+      } catch (err) {
+        console.error('CodeChef extraction failed:', err);
+        throw new Error('Failed to extract CodeChef problem details.');
+      }
     } else {
       // Generic extraction for other supported platforms
       let html = ""
@@ -397,4 +626,23 @@ function extractProblemDetails(html: string, platform: string, url: string) {
 
 function capitalizeFirst(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
+function guessTopic(title?: string) {
+  if (!title) return "Arrays";
+  const name = title.toLowerCase();
+  if (name.includes("parenthes") || name.includes("bracket") || name.includes("stack")) return "Stacks";
+  if (name.includes("substring") || name.includes("string") || name.includes("palindrome")) return "Strings";
+  if (name.includes("tree") || name.includes("binary") || name.includes("node")) return "Trees";
+  if (name.includes("graph") || name.includes("path") || name.includes("connected")) return "Graphs";
+  if (name.includes("dynamic") || name.includes("dp") || name.includes("climb") || name.includes("coin")) return "Dynamic Programming";
+  if (name.includes("sort") || name.includes("merge") || name.includes("quick")) return "Sorting";
+  if (name.includes("search") || name.includes("find") || name.includes("binary")) return "Searching";
+  if (name.includes("hash") || name.includes("map") || name.includes("duplicate")) return "Hash Tables";
+  if (name.includes("linked") || name.includes("list") || name.includes("reverse")) return "Linked Lists";
+  if (name.includes("greedy")) return "Greedy";
+  if (name.includes("math") || name.includes("number")) return "Math";
+  if (name.includes("backtrack")) return "Backtracking";
+  if (name.includes("queue") || name.includes("heap")) return "Queues";
+  return "Arrays";
 }
