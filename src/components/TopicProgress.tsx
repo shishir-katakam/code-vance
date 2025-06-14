@@ -9,6 +9,7 @@ interface Problem {
   topic: string;
   language: string;
   completed: boolean;
+  synced_from_platform?: boolean;
 }
 
 interface TopicProgressProps {
@@ -39,13 +40,17 @@ const TOPIC_MASTERY_REQUIREMENTS = {
 };
 
 const TopicProgress = ({ problems }: TopicProgressProps) => {
-  // Filter for problems with a valid, non-empty topic
-  const filteredProblems = problems.filter(
-    (problem) => problem.topic && problem.topic.trim() !== ''
+  // Filter for problems that were added through the site (not synced from platforms)
+  // and have a valid, non-empty topic
+  const siteAddedProblems = problems.filter(
+    (problem) => 
+      !problem.synced_from_platform && 
+      problem.topic && 
+      problem.topic.trim() !== ''
   );
 
-  // Calculate topic progress only for problems with topics
-  const topicStats = filteredProblems.reduce((acc, problem) => {
+  // Calculate topic progress only for site-added problems with topics
+  const topicStats = siteAddedProblems.reduce((acc, problem) => {
     const key = `${problem.topic}-${problem.language}`;
     if (!acc[key]) {
       acc[key] = {
@@ -103,7 +108,7 @@ const TopicProgress = ({ problems }: TopicProgressProps) => {
     }
   };
 
-  // If no topical data, display a helpful message
+  // If no site-added topical data, display a helpful message
   if (topicProgress.length === 0) {
     return (
       <Card className="bg-black/40 border-white/10 backdrop-blur-md">
@@ -115,7 +120,7 @@ const TopicProgress = ({ problems }: TopicProgressProps) => {
         </CardHeader>
         <CardContent>
           <div className="text-slate-300 text-center">
-            No topic data available yet. Try adding problems directly through this site and use AI analysis for best results!
+            No topic data available yet. Add problems directly through this site to track your topic mastery progress!
           </div>
         </CardContent>
       </Card>
