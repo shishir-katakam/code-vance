@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -126,7 +125,7 @@ const Index = () => {
 
   if (currentView === 'login') {
     return (
-      <div className="min-h-screen flex flex-col animate-fade-in">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
         <LoginForm onSuccess={handleAuth} onSwitchToSignup={() => setCurrentView('signup')} />
         <Footer />
       </div>
@@ -135,7 +134,7 @@ const Index = () => {
 
   if (currentView === 'signup') {
     return (
-      <div className="min-h-screen flex flex-col animate-fade-in">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
         <SignupForm onSuccess={handleAuth} onSwitchToLogin={() => setCurrentView('login')} />
         <Footer />
       </div>
