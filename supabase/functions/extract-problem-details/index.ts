@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -28,40 +27,116 @@ serve(async (req) => {
     }
 
     const platform = detectPlatform(parsedUrl.hostname)
-    
     let problemDetails
-    
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1',
+
+    if (platform === 'LeetCode') {
+      // Use LeetCode GraphQL API instead of scraping
+      const slugMatch = parsedUrl.pathname.match(/^\/problems\/([\w\-]+)/)
+      if (!slugMatch) {
+        throw new Error('Invalid LeetCode problem URL format')
+      }
+      const slug = slugMatch[1]
+      console.log('Detected LeetCode slug:', slug)
+
+      // LeetCode GraphQL query for problem data
+      const query = `
+        query getQuestionDetail($titleSlug: String!) {
+          question(titleSlug: $titleSlug) {
+            title
+            translatedTitle
+            titleSlug
+            questionId
+            isPaidOnly
+            difficulty
+            isFavor
+            freqBar
+            isSubscribed
+            topicTags {
+              name
+              slug
+              translatedName
+            }
+            content
+          }
         }
+      `
+      const gqlBody = {
+        operationName: "getQuestionDetail",
+        variables: { titleSlug: slug },
+        query,
+      }
+
+      const response = await fetch("https://leetcode.com/graphql", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "referer": "https://leetcode.com/",
+          "origin": "https://leetcode.com",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        },
+        body: JSON.stringify(gqlBody),
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch problem page: ${response.status}`)
+        throw new Error(`LeetCode API fetch error: ${response.status}`)
       }
 
-      const html = await response.text()
-      console.log(`Fetched HTML content, length: ${html.length}`)
-      
+      const result = await response.json()
+      if (!result?.data?.question) {
+        throw new Error('Could not fetch problem from LeetCode API')
+      }
+      const q = result.data.question
+
+      // Map topics to your canonical list (optional enhancement, for now just pick the first)
+      let topic = q.topicTags && q.topicTags.length > 0 ? q.topicTags[0].name : ""
+
+      // Strip HTML from description
+      function stripHtml(html: string): string {
+        if (!html) return ''
+        return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+      }
+
+      problemDetails = {
+        name: q.title,
+        description: stripHtml(q.content).substring(0, 500) + (q.content.length > 500 ? "..." : ""),
+        difficulty: capitalizeFirst(q.difficulty ? q.difficulty.toLowerCase() : ""),
+        topic: topic,
+        platform: "LeetCode",
+        url: url
+      }
+
+      console.log('Extracted from LeetCode API:', problemDetails)
+
+    } else {
+      // Generic extraction for other supported platforms
+      let html = ""
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+          }
+        })
+        if (!response.ok) {
+          throw new Error(`Failed to fetch problem page: ${response.status}`)
+        }
+        html = await response.text()
+        console.log(`Fetched HTML content, length: ${html.length}`)
+      } catch (error) {
+        console.error('Error fetching problem details:', error)
+        throw new Error('Unable to fetch problem details from the provided URL')
+      }
+
       problemDetails = extractProblemDetails(html, platform, url)
-      
-    } catch (error) {
-      console.error('Error fetching problem details:', error)
-      throw new Error('Unable to fetch problem details from the provided URL')
     }
 
-    console.log('Extracted details:', problemDetails)
     return new Response(JSON.stringify(problemDetails), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
-
   } catch (error) {
     console.error('Error in extract-problem-details:', error)
     return new Response(
