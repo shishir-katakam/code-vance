@@ -1,73 +1,63 @@
-# Welcome to your Lovable project
+# Codevance
 
-## Project info
+**Codevance** is a modern web application designed to help developers intelligently track, manage, and visualize their coding journey across multiple platforms like LeetCode, CodeChef, GeeksforGeeks, and more. With real-time statistics, interactive dashboards, and AI-powered learning recommendations, Codevance makes it easy to monitor your progress and plan your next steps in programming skill development.
 
-**URL**: https://lovable.dev/projects/a91ed688-cdb7-4ac9-83bd-b32530be8845
+##Main Features
 
-## How can I edit this code?
+###Landing Page with Real-time Stats
+- Displays live statistics on active developers, problems tracked, and sync accuracy.
+- Visually appealing hero section with modern animations, gradients, and call-to-actions.
+- Real-time data updates from the backend (Supabase).
 
-There are several ways of editing your application.
+###Interactive Demo Tour
+- "Watch Demo" feature offers a guided tour highlighting all core features.
+- Educates new users on functionality with clear, multi-step tooltips.
+- Important notices about API limitations (e.g., limited to total solved problem counts).
 
-**Use Lovable**
+###Secure Authentication
+- User authentication and session handling powered by **Supabase**.
+- Supports signup, login, and secure state management.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a91ed688-cdb7-4ac9-83bd-b32530be8845) and start prompting.
+###Personalized Dashboard
+- **Problem Collection**: Add, manage, and toggle coding problems.
+- **Stats Cards**: Instant overview of total problems, completion rate, and weekly coding activity.
+- **Tabs**:
+  - **Problems**: Manage and search your personal problem list.
+  - **Accounts**: Link external platform profiles (LeetCode, CodeChef, GFG, Codeforces).
+  - **Progress**: Track topic-wise mastery.
+  - **Analytics**: Visualize activity trends and problem difficulty distribution with charts.
+- Real-time UI updates for all user actions.
 
-Changes made via Lovable will be committed automatically to this repo.
+###Platform Integration & Sync
+- Supports syncing with LeetCode, CodeChef, GeeksforGeeks, and Codeforces.
+- Pulls solved problem counts and other data, subject to platform API limitations.
 
-**Use your preferred IDE**
+###AI-driven Insights
+- Generates personalized learning recommendations (feature under expansion).
+- Suggests problem areas based on user history.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+###Responsive & Modern Design
+- Fully mobile-optimized.
+- Smooth animations, transitions, and a clean, modern aesthetic.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+###Security & Privacy
+- All backend logic secured via **Supabase**.
+- No sensitive API keys exposed on the frontend.
+- Adheres to best practices for secure data handling.
 
-Follow these steps:
+## Live Now
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+[https://code-vance.vercel.app](https://code-vance.vercel.app)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+##Tech Stack
 
-# Step 3: Install the necessary dependencies.
-npm i
+- **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
+- **Backend & Auth**: Supabase
+- **Deployment**: Vercel
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+## 📦 Setup Instructions (Local Development)
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/a91ed688-cdb7-4ac9-83bd-b32530be8845) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```bash
+git clone https://github.com/your-username/codevance.git
+cd codevance
+# Open index.html in your preferred browser to run the app
