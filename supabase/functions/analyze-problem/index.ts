@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const deepseekApiKey = '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';
+const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -117,20 +117,26 @@ serve(async (req) => {
 
     console.log('Analyzing problem:', { problemName, description, platform });
 
-    // Try DeepSeek API first with timeout
+    // Try OpenRouter API first with timeout
     let analysis;
     try {
+      if (!openRouterApiKey) {
+        throw new Error('OpenRouter API key not configured');
+      }
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      const response = await fetch('https://api.deepseek.com/chat/completions', {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${deepseekApiKey}`,
+          'Authorization': `Bearer ${openRouterApiKey}`,
           'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://qtlaxxfcwghxxmtqthne.supabase.co',
+          'X-Title': 'Code Journey AI Tracker',
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
+          model: 'deepseek/deepseek-r1-0528:free',
           messages: [
             {
               role: 'system',
@@ -186,7 +192,7 @@ Analyze this problem and determine the PRIMARY skill/topic needed to solve it.`
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`DeepSeek API error: ${response.status} - ${response.statusText}`);
+        throw new Error(`OpenRouter API error: ${response.status} - ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -206,7 +212,7 @@ Analyze this problem and determine the PRIMARY skill/topic needed to solve it.`
       console.log('Successfully parsed AI analysis:', analysis);
 
     } catch (apiError) {
-      console.error('DeepSeek API failed, using fallback:', apiError);
+      console.error('OpenRouter API failed, using fallback:', apiError);
       
       // Use enhanced fallback classification
       const fallback = classifyProblemFallback(problemName, description);
