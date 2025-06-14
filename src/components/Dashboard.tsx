@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -305,10 +306,10 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
           ))}
         </div>
 
-        {/* Enhanced Tabs - Fixed alignment and spacing */}
+        {/* Fixed Tab Bar Alignment */}
         <Tabs defaultValue="problems" className="space-y-8">
-          <div className="w-full flex justify-center">
-            <TabsList className="grid grid-cols-4 bg-black/40 border-white/10 backdrop-blur-xl p-1 rounded-2xl gap-1 w-full max-w-2xl">
+          <div className="flex justify-center mb-8">
+            <TabsList className="inline-flex bg-black/40 border-white/10 backdrop-blur-xl p-1 rounded-2xl">
               {[
                 { value: "problems", label: "Problems", icon: Target },
                 { value: "accounts", label: "Accounts", icon: Link },
@@ -318,10 +319,10 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                 <TabsTrigger 
                   key={tab.value}
                   value={tab.value} 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white text-white/70 hover:text-white transition-all duration-300 rounded-xl py-3 px-4 flex items-center justify-center space-x-2 font-medium min-h-[48px]"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white text-white/70 hover:text-white transition-all duration-300 rounded-xl py-3 px-6 flex items-center space-x-2 font-medium whitespace-nowrap"
                 >
                   <tab.icon className="w-4 h-4" />
-                  <span className="hidden sm:block">{tab.label}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
