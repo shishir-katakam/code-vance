@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { X, Brain, TrendingUp, Target } from 'lucide-react';
+import { X, Brain, TrendingUp, Target, Link, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Problem {
   id: number;
@@ -36,7 +37,9 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
     completed: false
   });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
+  const [urlInput, setUrlInput] = useState('');
   const { toast } = useToast();
 
   const platforms = ['LeetCode', 'CodeChef', 'GeeksforGeeks', 'HackerRank', 'Codeforces', 'AtCoder'];
@@ -49,6 +52,50 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
     if (topicProblems.length === 0) return 0;
     const completed = topicProblems.filter(p => p.completed).length;
     return Math.round((completed / topicProblems.length) * 100);
+  };
+
+  const extractFromUrl = async () => {
+    if (!urlInput.trim()) {
+      toast({
+        title: "Missing URL",
+        description: "Please provide a problem URL to extract details.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsExtracting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('extract-problem-details', {
+        body: { url: urlInput.trim() }
+      });
+
+      if (error) throw error;
+
+      setFormData(prev => ({
+        ...prev,
+        name: data.name,
+        description: data.description,
+        platform: data.platform,
+        topic: data.topic,
+        difficulty: data.difficulty,
+        url: data.url
+      }));
+
+      toast({
+        title: "Details Extracted",
+        description: `Problem details extracted successfully from ${data.platform}`,
+      });
+    } catch (error) {
+      console.error('Extraction error:', error);
+      toast({
+        title: "Extraction Failed",
+        description: "Could not extract problem details. Please try manual entry.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExtracting(false);
+    }
   };
 
   const analyzeWithAI = async () => {
@@ -122,113 +169,167 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
         </Button>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <Tabs defaultValue="manual" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2 bg-white/5">
+            <TabsTrigger value="manual" className="text-white data-[state=active]:bg-purple-600">Manual Entry</TabsTrigger>
+            <TabsTrigger value="url" className="text-white data-[state=active]:bg-purple-600">From URL</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="url" className="space-y-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="problemUrl" className="text-white">Problem URL</Label>
+                <div className="flex space-x-2">
+                  <Input
+                    id="problemUrl"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
+                    placeholder="https://leetcode.com/problems/two-sum/"
+                  />
+                  <Button
+                    type="button"
+                    onClick={extractFromUrl}
+                    disabled={isExtracting}
+                    className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                  >
+                    {isExtracting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Link className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Supports LeetCode, GeeksforGeeks, HackerRank, Codeforces, CodeChef, and AtCoder
+                </p>
+              </div>
+
+              {(formData.name || formData.description) && (
+                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                  <h4 className="text-white font-medium mb-2">Extracted Details:</h4>
+                  <div className="space-y-1 text-sm text-gray-300">
+                    <p><strong>Name:</strong> {formData.name}</p>
+                    <p><strong>Platform:</strong> {formData.platform}</p>
+                    <p><strong>Difficulty:</strong> {formData.difficulty}</p>
+                    <p><strong>Topic:</strong> {formData.topic}</p>
+                    <p><strong>Description:</strong> {formData.description}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="manual" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-white">Problem Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
+                  placeholder="e.g., Two Sum"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="platform" className="text-white">Platform</Label>
+                <Select onValueChange={(value) => setFormData({ ...formData, platform: value })}>
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectValue placeholder="Select platform" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {platforms.map((platform) => (
+                      <SelectItem key={platform} value={platform}>{platform}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-white">Problem Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              <Label htmlFor="description" className="text-white">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
-                placeholder="e.g., Two Sum"
+                placeholder="Brief description of the problem..."
+                rows={3}
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="platform" className="text-white">Platform</Label>
-              <Select onValueChange={(value) => setFormData({ ...formData, platform: value })}>
-                <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                  <SelectValue placeholder="Select platform" />
-                </SelectTrigger>
-                <SelectContent>
-                  {platforms.map((platform) => (
-                    <SelectItem key={platform} value={platform}>{platform}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                onClick={analyzeWithAI}
+                disabled={isAnalyzing || !formData.name || !formData.description}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                {isAnalyzing ? 'Analyzing with AI...' : 'Analyze with AI (Optional)'}
+              </Button>
             </div>
-          </div>
+          </TabsContent>
+        </Tabs>
 
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-white">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
-              placeholder="Brief description of the problem..."
-              rows={3}
-              required
-            />
-          </div>
-
-          <div className="flex justify-center">
-            <Button
-              type="button"
-              onClick={analyzeWithAI}
-              disabled={isAnalyzing || !formData.name || !formData.description}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              <Brain className="h-4 w-4 mr-2" />
-              {isAnalyzing ? 'Analyzing with AI...' : 'Analyze with AI (Optional)'}
-            </Button>
-          </div>
-
-          {analysis && (
-            <div className="space-y-4">
-              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                <div className="text-center text-white mb-3">
-                  <p className="text-sm text-gray-300">AI Analysis Result:</p>
-                  <p className="text-lg font-semibold">
-                    <span className="text-purple-400">{analysis.topic}</span> • 
-                    <span className="text-pink-400 ml-2">{analysis.difficulty}</span>
-                  </p>
+        {analysis && (
+          <div className="space-y-4">
+            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+              <div className="text-center text-white mb-3">
+                <p className="text-sm text-gray-300">AI Analysis Result:</p>
+                <p className="text-lg font-semibold">
+                  <span className="text-purple-400">{analysis.topic}</span> • 
+                  <span className="text-pink-400 ml-2">{analysis.difficulty}</span>
+                </p>
+              </div>
+              
+              {/* Topic Progress */}
+              <div className="bg-black/20 rounded-lg p-3 mb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-300 flex items-center">
+                    <Target className="h-4 w-4 mr-1" />
+                    {analysis.topic} Progress
+                  </span>
+                  <span className="text-sm font-medium text-purple-400">{topicProgress}%</span>
                 </div>
-                
-                {/* Topic Progress */}
-                <div className="bg-black/20 rounded-lg p-3 mb-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-300 flex items-center">
-                      <Target className="h-4 w-4 mr-1" />
-                      {analysis.topic} Progress
-                    </span>
-                    <span className="text-sm font-medium text-purple-400">{topicProgress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div 
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${topicProgress}%` }}
-                    ></div>
-                  </div>
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${topicProgress}%` }}
+                  ></div>
                 </div>
+              </div>
 
-                {/* AI Recommendation */}
-                <div className={`rounded-lg p-3 border ${
-                  analysis.recommendation === 'should_focus' 
-                    ? 'bg-yellow-500/10 border-yellow-500/30' 
-                    : 'bg-green-500/10 border-green-500/30'
-                }`}>
-                  <div className="flex items-start space-x-2">
-                    <TrendingUp className={`h-4 w-4 mt-0.5 ${
-                      analysis.recommendation === 'should_focus' 
-                        ? 'text-yellow-400' 
-                        : 'text-green-400'
-                    }`} />
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        {analysis.recommendation === 'should_focus' 
-                          ? '🎯 Keep Practicing This Topic' 
-                          : '✨ Ready for Next Topic'}
-                      </p>
-                      <p className="text-xs text-gray-300 mt-1">{analysis.reason}</p>
-                    </div>
+              {/* AI Recommendation */}
+              <div className={`rounded-lg p-3 border ${
+                analysis.recommendation === 'should_focus' 
+                  ? 'bg-yellow-500/10 border-yellow-500/30' 
+                  : 'bg-green-500/10 border-green-500/30'
+              }`}>
+                <div className="flex items-start space-x-2">
+                  <TrendingUp className={`h-4 w-4 mt-0.5 ${
+                    analysis.recommendation === 'should_focus' 
+                      ? 'text-yellow-400' 
+                      : 'text-green-400'
+                  }`} />
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      {analysis.recommendation === 'should_focus' 
+                        ? '🎯 Keep Practicing This Topic' 
+                        : '✨ Ready for Next Topic'}
+                    </p>
+                    <p className="text-xs text-gray-300 mt-1">{analysis.reason}</p>
                   </div>
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="topic" className="text-white">Topic</Label>
