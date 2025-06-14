@@ -237,7 +237,7 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
-                  CodeTracker
+                  Codevance
                 </h1>
                 <p className="text-xs text-purple-300/70 font-medium tracking-wider">DASHBOARD</p>
               </div>

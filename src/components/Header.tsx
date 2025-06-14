@@ -12,7 +12,7 @@ const Header = () => {
       <div className="container mx-auto px-6 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Code2 className="h-8 w-8 text-purple-400" />
-          <h1 className="text-2xl font-bold text-white">CodeTracker</h1>
+          <h1 className="text-2xl font-bold text-white">Codevance</h1>
         </div>
         
         <div className="flex items-center space-x-4">

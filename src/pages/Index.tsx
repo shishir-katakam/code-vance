@@ -1,18 +1,49 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import LoginForm from '@/components/LoginForm';
 import SignupForm from '@/components/SignupForm';
 import Dashboard from '@/components/Dashboard';
 import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
-import { Code2, TrendingUp, Target, Users, Sparkles, Zap, Shield, Rocket } from 'lucide-react';
+import { Code2, TrendingUp, Target, Users, Sparkles, Zap, Shield, Rocket, X, ChevronRight, ChevronLeft, Info } from 'lucide-react';
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'signup' | 'dashboard'>('landing');
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showDemoTour, setShowDemoTour] = useState(false);
+  const [currentTourStep, setCurrentTourStep] = useState(0);
+
+  const tourSteps = [
+    {
+      title: "Welcome to Codevance!",
+      description: "Your intelligent coding companion that tracks your programming journey across multiple platforms.",
+      highlight: "header"
+    },
+    {
+      title: "Smart Problem Tracking",
+      description: "Automatically sync and track problems from LeetCode, CodeChef, GeeksforGeeks, and more popular coding platforms.",
+      highlight: "features"
+    },
+    {
+      title: "Real-time Analytics",
+      description: "Get beautiful visualizations and detailed progress charts that help you understand your coding patterns.",
+      highlight: "stats"
+    },
+    {
+      title: "AI-Powered Insights",
+      description: "Receive personalized recommendations and learning paths powered by advanced AI technology.",
+      highlight: "cta"
+    },
+    {
+      title: "Important Notice",
+      description: "Please note that coding platforms don't provide real-time APIs. We can only sync the total number of problems you've solved on each platform, not individual problem details or real-time progress.",
+      highlight: "notice",
+      isNotice: true
+    }
+  ];
 
   useEffect(() => {
     // Check initial session
@@ -50,6 +81,30 @@ const Index = () => {
   const handleLogout = () => {
     setCurrentView('landing');
   };
+
+  const startDemoTour = () => {
+    setShowDemoTour(true);
+    setCurrentTourStep(0);
+  };
+
+  const nextTourStep = () => {
+    if (currentTourStep < tourSteps.length - 1) {
+      setCurrentTourStep(currentTourStep + 1);
+    }
+  };
+
+  const prevTourStep = () => {
+    if (currentTourStep > 0) {
+      setCurrentTourStep(currentTourStep - 1);
+    }
+  };
+
+  const closeDemoTour = () => {
+    setShowDemoTour(false);
+    setCurrentTourStep(0);
+  };
+
+  const currentStep = tourSteps[currentTourStep];
 
   if (isLoading) {
     return (
@@ -94,7 +149,7 @@ const Index = () => {
       </div>
 
       {/* Header */}
-      <header className="relative bg-black/30 backdrop-blur-xl border-b border-white/10 shadow-2xl">
+      <header className={`relative bg-black/30 backdrop-blur-xl border-b border-white/10 shadow-2xl transition-all duration-500 ${showDemoTour && currentStep.highlight === 'header' ? 'ring-4 ring-purple-400/50 z-50' : ''}`}>
         <div className="container mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3 group">
@@ -104,7 +159,7 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
-                  CodeTracker
+                  Codevance
                 </h1>
                 <p className="text-xs text-purple-300/70 font-medium tracking-wider">ELEVATE YOUR CODING</p>
               </div>
@@ -161,6 +216,7 @@ const Index = () => {
             <Button 
               variant="outline"
               size="lg"
+              onClick={startDemoTour}
               className="border-2 border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 hover:border-white/40 px-10 py-4 rounded-2xl text-lg font-semibold transition-all duration-300 hover:scale-105"
             >
               Watch Demo
@@ -169,7 +225,7 @@ const Index = () => {
         </div>
 
         {/* Enhanced Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-24">
+        <div className={`grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-24 transition-all duration-500 ${showDemoTour && currentStep.highlight === 'features' ? 'ring-4 ring-purple-400/50 rounded-2xl p-4' : ''}`}>
           {[
             {
               icon: Target,
@@ -217,7 +273,7 @@ const Index = () => {
         </div>
 
         {/* Enhanced Stats Section */}
-        <div className="bg-black/30 backdrop-blur-xl rounded-3xl border border-white/10 p-12 mb-24 animate-fade-in delay-500">
+        <div className={`bg-black/30 backdrop-blur-xl rounded-3xl border border-white/10 p-12 mb-24 animate-fade-in delay-500 transition-all duration-500 ${showDemoTour && currentStep.highlight === 'stats' ? 'ring-4 ring-purple-400/50' : ''}`}>
           <div className="grid md:grid-cols-3 gap-12 text-center">
             {[
               { number: '50K+', label: 'Active Developers', icon: Users },
@@ -236,7 +292,7 @@ const Index = () => {
         </div>
 
         {/* Enhanced CTA Section */}
-        <div className="text-center bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-purple-600/20 backdrop-blur-xl rounded-3xl border border-white/10 p-16 animate-fade-in delay-700">
+        <div className={`text-center bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-purple-600/20 backdrop-blur-xl rounded-3xl border border-white/10 p-16 animate-fade-in delay-700 transition-all duration-500 ${showDemoTour && currentStep.highlight === 'cta' ? 'ring-4 ring-purple-400/50' : ''}`}>
           <div className="inline-flex items-center space-x-2 bg-purple-500/20 backdrop-blur-sm border border-purple-500/30 rounded-full px-6 py-2 mb-8">
             <Sparkles className="w-4 h-4 text-purple-400" />
             <span className="text-purple-300 text-sm font-medium">Join the Revolution</span>
@@ -267,6 +323,95 @@ const Index = () => {
           </p>
         </div>
       </main>
+
+      {/* Demo Tour Dialog */}
+      <Dialog open={showDemoTour} onOpenChange={setShowDemoTour}>
+        <DialogContent className="bg-gradient-to-br from-slate-900 to-purple-900 border-purple-500/20 max-w-2xl">
+          <DialogHeader className="relative">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={closeDemoTour}
+              className="absolute -top-2 -right-2 text-white/60 hover:text-white hover:bg-white/10 w-8 h-8 p-0"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+            <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
+              {currentStep.isNotice ? (
+                <Info className="w-6 h-6 text-yellow-400" />
+              ) : (
+                <Sparkles className="w-6 h-6 text-purple-400" />
+              )}
+              {currentStep.title}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <DialogDescription className="text-slate-300 text-lg leading-relaxed">
+              {currentStep.description}
+            </DialogDescription>
+            
+            {currentStep.isNotice && (
+              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-yellow-200 text-sm">
+                    <p className="font-medium mb-1">API Limitations</p>
+                    <p>Due to platform restrictions, we can only track the total number of problems solved on each platform. Individual problem details and real-time progress tracking are not available through official APIs.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between pt-4">
+              <div className="flex items-center gap-2">
+                {tourSteps.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      index === currentTourStep 
+                        ? 'bg-purple-400 w-8' 
+                        : index < currentTourStep 
+                          ? 'bg-purple-600' 
+                          : 'bg-slate-600'
+                    }`}
+                  />
+                ))}
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={prevTourStep}
+                  disabled={currentTourStep === 0}
+                  className="text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-50"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Previous
+                </Button>
+                
+                {currentTourStep < tourSteps.length - 1 ? (
+                  <Button
+                    onClick={nextTourStep}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={closeDemoTour}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                  >
+                    Get Started
+                    <Rocket className="w-4 h-4 ml-1" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
