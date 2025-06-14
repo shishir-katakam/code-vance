@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Plus, Target, Link, TrendingUp, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ProblemForm from '../ProblemForm'; // <-- Add this import
 import ProblemList from '../ProblemList';
 import LinkAccounts from '../LinkAccounts';
 import TopicProgress from '../TopicProgress';
