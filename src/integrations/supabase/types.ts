@@ -9,142 +9,16 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      linked_accounts: {
-        Row: {
-          api_key: string | null
-          created_at: string
-          id: string
-          is_active: boolean
-          last_sync: string | null
-          platform: string
-          updated_at: string
-          user_id: string
-          username: string
-        }
-        Insert: {
-          api_key?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          last_sync?: string | null
-          platform: string
-          updated_at?: string
-          user_id: string
-          username: string
-        }
-        Update: {
-          api_key?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          last_sync?: string | null
-          platform?: string
-          updated_at?: string
-          user_id?: string
-          username?: string
-        }
-        Relationships: []
-      }
-      platform_stats: {
-        Row: {
-          id: string
-          last_updated: string
-          total_platforms: number
-          total_problems: number
-          total_users: number
-        }
-        Insert: {
-          id?: string
-          last_updated?: string
-          total_platforms?: number
-          total_problems?: number
-          total_users?: number
-        }
-        Update: {
-          id?: string
-          last_updated?: string
-          total_platforms?: number
-          total_problems?: number
-          total_users?: number
-        }
-        Relationships: []
-      }
-      problems: {
-        Row: {
-          completed: boolean
-          date_added: string
-          description: string | null
-          difficulty: string | null
-          id: number
-          language: string | null
-          name: string
-          platform: string | null
-          platform_problem_id: string | null
-          platform_url: string | null
-          solved_date: string | null
-          synced_from_platform: boolean | null
-          topic: string | null
-          url: string | null
-          user_id: string | null
-        }
-        Insert: {
-          completed?: boolean
-          date_added?: string
-          description?: string | null
-          difficulty?: string | null
-          id?: number
-          language?: string | null
-          name: string
-          platform?: string | null
-          platform_problem_id?: string | null
-          platform_url?: string | null
-          solved_date?: string | null
-          synced_from_platform?: boolean | null
-          topic?: string | null
-          url?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          completed?: boolean
-          date_added?: string
-          description?: string | null
-          difficulty?: string | null
-          id?: number
-          language?: string | null
-          name?: string
-          platform?: string | null
-          platform_problem_id?: string | null
-          platform_url?: string | null
-          solved_date?: string | null
-          synced_from_platform?: boolean | null
-          topic?: string | null
-          url?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      reset_platform_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      update_platform_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
-      Difficulty: "EASY" | "MEDIUM" | "HARD"
-      Platform:
-        | "LEETCODE"
-        | "CODECHEF"
-        | "GEEKSFORGEEKS"
-        | "HACKERRANK"
-        | "CODEFORCES"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -259,15 +133,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      Difficulty: ["EASY", "MEDIUM", "HARD"],
-      Platform: [
-        "LEETCODE",
-        "CODECHEF",
-        "GEEKSFORGEEKS",
-        "HACKERRANK",
-        "CODEFORCES",
-      ],
-    },
+    Enums: {},
   },
 } as const
