@@ -21,7 +21,7 @@ const Index = () => {
   const tourSteps = [
     {
       title: "Welcome to Codevance!",
-      description: "Your intelligent coding companion that tracks your programming journey across multiple platforms.",
+      description: "Your intelligent coding companion that tracks your programming journey across multiple platforms with real-time data updates.",
       highlight: "header"
     },
     {
@@ -31,7 +31,7 @@ const Index = () => {
     },
     {
       title: "Real-time Analytics",
-      description: "Get beautiful visualizations and detailed progress charts that help you understand your coding patterns.",
+      description: "Get beautiful visualizations and detailed progress charts that update in real-time as you and other users solve problems.",
       highlight: "stats"
     },
     {
@@ -141,14 +141,15 @@ const Index = () => {
     );
   }
 
-  // Format numbers for display
+  // Format numbers for display - updated to show real numbers better
   const formatNumber = (num: number) => {
+    if (num === 0) return '0';
     if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1)}M+`;
+      return `${(num / 1000000).toFixed(1)}M`;
     } else if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K+`;
+      return `${(num / 1000).toFixed(1)}K`;
     }
-    return `${num}+`;
+    return num.toString();
   };
 
   return (
@@ -292,33 +293,51 @@ const Index = () => {
                 number: statsLoading ? '...' : formatNumber(stats.total_users || 0), 
                 label: 'Active Developers', 
                 icon: Users,
-                actualValue: stats.total_users || 0
+                actualValue: stats.total_users || 0,
+                isRealTime: true
               },
               { 
                 number: statsLoading ? '...' : formatNumber(stats.total_problems || 0), 
                 label: 'Problems Tracked', 
                 icon: Target,
-                actualValue: stats.total_problems || 0
+                actualValue: stats.total_problems || 0,
+                isRealTime: true
               },
               { 
                 number: '99.9%', 
                 label: 'Sync Accuracy', 
                 icon: Shield,
-                actualValue: 99.9
+                actualValue: 99.9,
+                isRealTime: false
               }
             ].map((stat, index) => (
               <div key={index} className="group">
-                <stat.icon className="w-8 h-8 mx-auto mb-4 text-purple-400 group-hover:scale-110 transition-transform duration-300" />
+                <div className="flex items-center justify-center mb-4">
+                  <stat.icon className="w-8 h-8 text-purple-400 group-hover:scale-110 transition-transform duration-300" />
+                  {stat.isRealTime && !statsLoading && (
+                    <div className="ml-2 flex items-center">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <span className="text-xs text-green-400 ml-1">LIVE</span>
+                    </div>
+                  )}
+                </div>
                 <div className="text-4xl md:text-5xl font-bold text-white mb-2 bg-gradient-to-br from-white to-purple-200 bg-clip-text text-transparent">
                   {stat.number}
                 </div>
                 <div className="text-slate-300 font-medium">{stat.label}</div>
-                {!statsLoading && stat.actualValue !== undefined && stat.actualValue < 100 && (
-                  <div className="text-xs text-slate-500 mt-1">Real-time data</div>
+                {stat.isRealTime && !statsLoading && (
+                  <div className="text-xs text-slate-500 mt-1">
+                    Real-time data • Updated {new Date(stats.last_updated).toLocaleTimeString()}
+                  </div>
                 )}
               </div>
             ))}
           </div>
+          {!statsLoading && (stats.total_users > 0 || stats.total_problems > 0) && (
+            <div className="text-center mt-8 text-sm text-slate-400">
+              📊 All statistics update automatically as users interact with the platform
+            </div>
+          )}
         </div>
 
         {/* Enhanced CTA Section */}
