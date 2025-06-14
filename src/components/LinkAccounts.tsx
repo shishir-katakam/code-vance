@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,6 @@ import { Trash2, Plus, RefreshCw, CheckCircle, XCircle, ExternalLink, Zap, Spark
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Progress } from '@/components/ui/progress';
 
 interface LinkedAccount {
   id: string;
@@ -42,11 +42,9 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
   const { toast } = useToast();
 
   const platforms = [
-    { name: 'LeetCode', icon: '💻', color: 'bg-gradient-to-r from-orange-500 to-red-500', description: 'Lightning-fast LeetCode sync' },
-    { name: 'CodeChef', icon: '🍳', color: 'bg-gradient-to-r from-purple-500 to-indigo-500', description: 'Instant CodeChef import' },
-    { name: 'HackerRank', icon: '🚀', color: 'bg-gradient-to-r from-green-500 to-emerald-500', description: 'Rapid HackerRank tracking' },
-    { name: 'Codeforces', icon: '⚡', color: 'bg-gradient-to-r from-blue-500 to-cyan-500', description: 'Ultra-fast Codeforces sync' },
-    { name: 'GeeksforGeeks', icon: '🤓', color: 'bg-gradient-to-r from-yellow-500 to-orange-500', description: 'Smart GFG integration' },
+    { name: 'LeetCode', icon: '💻', color: 'bg-gradient-to-r from-orange-500 to-red-500', description: 'Lightning-fast LeetCode sync', hasSync: true },
+    { name: 'CodeChef', icon: '🍳', color: 'bg-gradient-to-r from-purple-500 to-indigo-500', description: 'CodeChef platform linking', hasSync: false },
+    { name: 'GeeksforGeeks', icon: '🤓', color: 'bg-gradient-to-r from-yellow-500 to-orange-500', description: 'Smart GFG integration', hasSync: true },
   ];
 
   useEffect(() => {
@@ -142,9 +140,14 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
 
       if (error) throw error;
 
+      const platformData = platforms.find(p => p.name === newAccount.platform);
+      const successMessage = platformData?.hasSync 
+        ? `${newAccount.platform} account @${newAccount.username} is ready for lightning-fast sync!`
+        : `${newAccount.platform} account @${newAccount.username} has been linked successfully!`;
+
       toast({
         title: "🎉 Account Linked Successfully!",
-        description: `${newAccount.platform} account @${newAccount.username} is ready for lightning-fast sync!`,
+        description: successMessage,
       });
 
       setNewAccount({ platform: '', username: '' });
@@ -208,6 +211,18 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
   };
 
   const handleSyncAccount = async (account: LinkedAccount) => {
+    const platformData = platforms.find(p => p.name === account.platform);
+    
+    // Check if platform supports sync
+    if (!platformData?.hasSync) {
+      toast({
+        title: "Sync Not Available",
+        description: `${account.platform} sync is not currently available. Your account is linked for future use.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Check if sync is already running
     if (globalSyncState.activeSyncs.has(account.platform)) {
       toast({
@@ -281,12 +296,9 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
         onProblemsUpdate();
       }
 
-      // Determine sync function with enhanced mapping
+      // Determine sync function with enhanced mapping - only for platforms that have sync
       const syncFunctionMap = {
         'LeetCode': 'sync-leetcode',
-        'CodeChef': 'sync-codechef', 
-        'HackerRank': 'sync-hackerrank',
-        'Codeforces': 'sync-codeforces',
         'GeeksforGeeks': 'sync-geeksforgeeks'
       };
 
@@ -372,9 +384,10 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
 
           if (existing) return;
 
-          // Optimized problem processing
-          const topic = problem.topics?.[0] || 'Arrays';
-          const difficulty = problem.difficulty || 'Medium';
+          // Only use real data from the problem object, no fake data
+          const topic = problem.topics?.[0] || null;
+          const difficulty = problem.difficulty || null;
+          const language = problem.language || null;
 
           const { error: insertError } = await supabase
             .from('problems')
@@ -383,7 +396,7 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
               description: (problem.content || problem.title).replace(/<[^>]*>/g, '').substring(0, 500) + (problem.content && problem.content.length > 500 ? '...' : ''),
               platform: platform,
               topic,
-              language: problem.language || 'Python',
+              language,
               difficulty,
               completed: true,
               url: problem.url,
@@ -531,77 +544,82 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
       )}
 
       <div className="grid gap-6">
-        {linkedAccounts.map((account, index) => (
-          <Card key={account.id} className="bg-black/60 border-white/20 backdrop-blur-xl hover:bg-black/70 transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 shadow-xl hover:shadow-2xl animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-            <CardContent className="p-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-6">
-                  <div className={`w-16 h-16 rounded-2xl ${platforms.find(p => p.name === account.platform)?.color || 'bg-gradient-to-r from-gray-500 to-gray-600'} flex items-center justify-center text-white font-bold text-xl shadow-lg transition-transform duration-300 hover:scale-110`}>
-                    {platforms.find(p => p.name === account.platform)?.icon || '🔗'}
-                  </div>
-                  <div>
-                    <h3 className="text-white font-bold text-xl">{account.platform}</h3>
-                    <p className="text-purple-300 text-base font-medium">@{account.username}</p>
-                    {account.last_sync && (
-                      <p className="text-slate-400 text-sm">
-                        Last synced: {new Date(account.last_sync).toLocaleDateString()}
-                      </p>
-                    )}
-                    {syncProgress[account.platform] !== undefined && (
-                      <div className="mt-3 space-y-2">
-                        <div className="flex items-center space-x-3">
-                          <div className="text-blue-400 text-sm font-medium">
-                            Syncing... {syncProgress[account.platform]}%
-                          </div>
-                          {syncSpeed[account.platform] > 0 && (
-                            <div className="text-green-400 text-xs flex items-center space-x-1">
-                              <Zap className="w-3 h-3" />
-                              <span>{syncSpeed[account.platform]} problems/sec</span>
+        {linkedAccounts.map((account, index) => {
+          const platformData = platforms.find(p => p.name === account.platform);
+          return (
+            <Card key={account.id} className="bg-black/60 border-white/20 backdrop-blur-xl hover:bg-black/70 transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 shadow-xl hover:shadow-2xl animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
+              <CardContent className="p-8">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-6">
+                    <div className={`w-16 h-16 rounded-2xl ${getPlatformColor(account.platform)} flex items-center justify-center text-white font-bold text-xl shadow-lg transition-transform duration-300 hover:scale-110`}>
+                      {getPlatformIcon(account.platform)}
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-xl">{account.platform}</h3>
+                      <p className="text-purple-300 text-base font-medium">@{account.username}</p>
+                      {account.last_sync && (
+                        <p className="text-slate-400 text-sm">
+                          Last synced: {new Date(account.last_sync).toLocaleDateString()}
+                        </p>
+                      )}
+                      {syncProgress[account.platform] !== undefined && (
+                        <div className="mt-3 space-y-2">
+                          <div className="flex items-center space-x-3">
+                            <div className="text-blue-400 text-sm font-medium">
+                              Syncing... {syncProgress[account.platform]}%
                             </div>
-                          )}
+                            {syncSpeed[account.platform] > 0 && (
+                              <div className="text-green-400 text-xs flex items-center space-x-1">
+                                <Zap className="w-3 h-3" />
+                                <span>{syncSpeed[account.platform]} problems/sec</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="w-64 h-3 bg-gray-700 rounded-full overflow-hidden">
+                            <div 
+                              className="h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-300 ease-out"
+                              style={{ width: `${syncProgress[account.platform]}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="w-64 h-3 bg-gray-700 rounded-full overflow-hidden">
-                          <div 
-                            className="h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-300 ease-out"
-                            style={{ width: `${syncProgress[account.platform]}%` }}
-                          />
-                        </div>
-                      </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <Badge variant={account.is_active ? "default" : "secondary"} className="flex items-center space-x-2 px-3 py-1">
+                      {account.is_active ? (
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-400" />
+                      )}
+                      <span className="font-medium">{account.is_active ? 'Active' : 'Inactive'}</span>
+                    </Badge>
+                    {platformData?.hasSync && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSyncAccount(account)}
+                        disabled={syncingPlatforms.includes(account.platform)}
+                        className="text-white border-purple-500/50 hover:bg-purple-600/20 bg-purple-600/10 font-semibold hover:border-purple-400 transition-all duration-300 hover:scale-105 disabled:opacity-50"
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${syncingPlatforms.includes(account.platform) ? 'animate-spin' : ''}`} />
+                        {syncingPlatforms.includes(account.platform) ? 'Syncing...' : 'Sync Now'}
+                      </Button>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveAccount(account.id, account.platform, account.username)}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-all duration-300 hover:scale-105"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <Badge variant={account.is_active ? "default" : "secondary"} className="flex items-center space-x-2 px-3 py-1">
-                    {account.is_active ? (
-                      <CheckCircle className="h-4 w-4 text-green-400" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-red-400" />
-                    )}
-                    <span className="font-medium">{account.is_active ? 'Active' : 'Inactive'}</span>
-                  </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSyncAccount(account)}
-                    disabled={syncingPlatforms.includes(account.platform)}
-                    className="text-white border-purple-500/50 hover:bg-purple-600/20 bg-purple-600/10 font-semibold hover:border-purple-400 transition-all duration-300 hover:scale-105 disabled:opacity-50"
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${syncingPlatforms.includes(account.platform) ? 'animate-spin' : ''}`} />
-                    {syncingPlatforms.includes(account.platform) ? 'Syncing...' : 'Sync Now'}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveAccount(account.id, account.platform, account.username)}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-all duration-300 hover:scale-105"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {linkedAccounts.length === 0 && (
