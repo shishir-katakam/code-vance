@@ -18,11 +18,11 @@ serve(async (req) => {
       throw new Error('Valid URL is required')
     }
 
-    // Validate URL format
+    // Validate and parse URL
     let parsedUrl: URL
     try {
       parsedUrl = new URL(url)
-    } catch {
+    } catch (err) {
       throw new Error('Invalid URL format')
     }
 
@@ -30,15 +30,18 @@ serve(async (req) => {
     let problemDetails
 
     if (platform === 'LeetCode') {
-      // Use LeetCode GraphQL API instead of scraping
-      const slugMatch = parsedUrl.pathname.match(/^\/problems\/([\w\-]+)/)
-      if (!slugMatch) {
-        throw new Error('Invalid LeetCode problem URL format')
+      // Robust slug parsing for LeetCode
+      // Must extract between /problems/ and next slash (or to end)
+      let slug = ''
+      const slugMatch = parsedUrl.pathname.match(/\/problems\/([^\/\s]+)(?:\/|$)/)
+      if (slugMatch) {
+        slug = slugMatch[1]
+      } else {
+        throw new Error('Invalid LeetCode problem URL format: Could not find a problem slug in ' + parsedUrl.pathname)
       }
-      const slug = slugMatch[1]
-      console.log('Detected LeetCode slug:', slug)
+      console.log('Extracted LeetCode slug:', slug)
 
-      // LeetCode GraphQL query for problem data
+      // LeetCode GraphQL API request for data
       const query = `
         query getQuestionDetail($titleSlug: String!) {
           question(titleSlug: $titleSlug) {
@@ -48,13 +51,9 @@ serve(async (req) => {
             questionId
             isPaidOnly
             difficulty
-            isFavor
-            freqBar
-            isSubscribed
             topicTags {
               name
               slug
-              translatedName
             }
             content
           }
@@ -78,19 +77,22 @@ serve(async (req) => {
       })
 
       if (!response.ok) {
-        throw new Error(`LeetCode API fetch error: ${response.status}`)
+        throw new Error(`LeetCode GraphQL API fetch error: ${response.status}, ${await response.text()}`)
       }
 
       const result = await response.json()
       if (!result?.data?.question) {
-        throw new Error('Could not fetch problem from LeetCode API')
+        throw new Error(`Could not fetch problem from LeetCode API for slug "${slug}"`)
       }
       const q = result.data.question
 
-      // Map topics to your canonical list (optional enhancement, for now just pick the first)
-      let topic = q.topicTags && q.topicTags.length > 0 ? q.topicTags[0].name : ""
+      // Pick topics: join all main topic tags names with comma
+      let topic = ''
+      if (q.topicTags && q.topicTags.length > 0) {
+        topic = q.topicTags.map(tag => tag.name).join(', ')
+      }
 
-      // Strip HTML from description
+      // Strip HTML from LeetCode content
       function stripHtml(html: string): string {
         if (!html) return ''
         return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -98,14 +100,14 @@ serve(async (req) => {
 
       problemDetails = {
         name: q.title,
-        description: stripHtml(q.content).substring(0, 500) + (q.content.length > 500 ? "..." : ""),
+        description: stripHtml(q.content).substring(0, 480) + (q.content.length > 480 ? "..." : ""),
         difficulty: capitalizeFirst(q.difficulty ? q.difficulty.toLowerCase() : ""),
         topic: topic,
         platform: "LeetCode",
         url: url
       }
 
-      console.log('Extracted from LeetCode API:', problemDetails)
+      console.log('Extracted problem details from LeetCode:', problemDetails)
 
     } else {
       // Generic extraction for other supported platforms
@@ -140,7 +142,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in extract-problem-details:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message ?? 'Something went wrong' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
