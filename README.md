@@ -61,3 +61,4 @@ Setup Instructions (Local Development)
 git clone https://github.com/your-username/codevance.git
 cd codevance
 # Open index.html in your preferred browser to run the app
+"# code-vance" 
