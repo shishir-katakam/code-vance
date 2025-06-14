@@ -222,7 +222,7 @@ const Index = () => {
             <Button 
               size="lg"
               onClick={() => setCurrentView('signup')}
-              className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white px-8 md:px-10 py-3 md:py-4 rounded-2xl text-base md:text-lg font-semibold shadow-2xl hover:shadow-purple-500/30 transition-all duration-500 hover:scale-105 group bg-size-200 hover:bg-pos-100 w-full sm:w-auto"
+              className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white px-8 md:px-10 py-3 md:py-4 rounded-2xl text-base md:text-lg font-semibold shadow-2xl hover:shadow-purple-500/30 transition-all duration-500 hover:scale-105 group bg-size-200 hover:bg-pos-100 w-full sm:w-auto justify-center"
               style={{ backgroundSize: '200% 100%' }}
             >
               <Rocket className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 group-hover:animate-bounce" />
@@ -362,7 +362,7 @@ const Index = () => {
           <Button 
             size="lg"
             onClick={() => setCurrentView('signup')}
-            className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white px-8 md:px-12 py-4 md:py-6 rounded-2xl text-lg md:text-xl font-semibold shadow-2xl hover:shadow-purple-500/40 transition-all duration-500 hover:scale-110 group w-full sm:w-auto"
+            className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white px-8 md:px-12 py-4 md:py-6 rounded-2xl text-lg md:text-xl font-semibold shadow-2xl hover:shadow-purple-500/40 transition-all duration-500 hover:scale-110 group w-full sm:w-auto justify-center"
           >
             <Rocket className="w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 group-hover:animate-bounce" />
             Launch Your Journey Now
