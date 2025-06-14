@@ -234,10 +234,10 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4">
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-white text-xl font-medium animate-pulse">Loading your dashboard...</div>
+          <div className="w-12 h-12 md:w-16 md:h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-white text-lg md:text-xl font-medium animate-pulse text-center">Loading your dashboard...</div>
         </div>
       </div>
     );
@@ -257,15 +257,15 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col">
       {/* Animated background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute -top-40 -right-40 w-60 h-60 md:w-80 md:h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-60 h-60 md:w-80 md:h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
       {/* Header */}
       <DashboardHeader userEmail={user?.email} onLogout={handleLogout} />
 
       {/* Stats cards */}
-      <div className="relative container mx-auto px-6 py-8 flex-1">
+      <div className="relative container mx-auto px-4 md:px-6 py-6 md:py-8 flex-1">
         <StatsCards 
           total={stats.total} 
           completed={stats.completed} 

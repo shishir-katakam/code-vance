@@ -30,9 +30,9 @@ const DashboardTabs = ({
   loadProblems,
   onStatsReset
 }: DashboardTabsProps) => (
-  <Tabs defaultValue="problems" className="space-y-8">
-    <div className="flex justify-center mb-8">
-      <TabsList className="inline-flex bg-black/40 border-white/10 backdrop-blur-xl p-1 rounded-2xl">
+  <Tabs defaultValue="problems" className="space-y-6 md:space-y-8">
+    <div className="flex justify-center mb-6 md:mb-8 overflow-x-auto">
+      <TabsList className="inline-flex bg-black/40 border-white/10 backdrop-blur-xl p-1 rounded-2xl min-w-max">
         {[
           { value: "problems", label: "Problems", icon: Target },
           { value: "accounts", label: "Accounts", icon: Link },
@@ -42,28 +42,29 @@ const DashboardTabs = ({
           <TabsTrigger 
             key={tab.value}
             value={tab.value} 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white text-white/70 hover:text-white transition-all duration-300 rounded-xl py-3 px-6 flex items-center space-x-2 font-medium whitespace-nowrap"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white text-white/70 hover:text-white transition-all duration-300 rounded-xl py-2 md:py-3 px-3 md:px-6 flex items-center space-x-1 md:space-x-2 font-medium whitespace-nowrap text-sm md:text-base"
           >
-            <tab.icon className="w-4 h-4" />
+            <tab.icon className="w-3 h-3 md:w-4 md:h-4" />
             <span className="hidden sm:inline">{tab.label}</span>
+            <span className="sm:hidden">{tab.label.slice(0, 4)}</span>
           </TabsTrigger>
         ))}
       </TabsList>
     </div>
 
-    <TabsContent value="problems" className="space-y-8 animate-fade-in">
-      <div className="flex justify-between items-center">
+    <TabsContent value="problems" className="space-y-6 md:space-y-8 animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
+          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
             Problem Collection
           </h2>
-          <p className="text-slate-400 mt-1">Track and manage your coding challenges</p>
+          <p className="text-slate-400 mt-1 text-sm md:text-base">Track and manage your coding challenges</p>
         </div>
         <Button 
           onClick={() => setShowForm(!showForm)}
-          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105"
+          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105 w-full sm:w-auto text-sm md:text-base px-4 md:px-6 py-2 md:py-3"
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
           Add Problem
         </Button>
       </div>
@@ -86,25 +87,25 @@ const DashboardTabs = ({
     </TabsContent>
 
     <TabsContent value="progress" className="animate-fade-in">
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent mb-2">
+          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent mb-2">
             Topic Progress
           </h2>
-          <p className="text-slate-400">Track your mastery across different programming topics</p>
+          <p className="text-slate-400 text-sm md:text-base">Track your mastery across different programming topics</p>
         </div>
         <TopicProgress problems={problems} />
       </div>
     </TabsContent>
 
     <TabsContent value="analytics" className="animate-fade-in">
-      <div className="space-y-6">
-        <div className="flex justify-between items-start">
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent mb-2">
+            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent mb-2">
               Performance Analytics
             </h2>
-            <p className="text-slate-400">Visualize your coding journey with detailed insights</p>
+            <p className="text-slate-400 text-sm md:text-base">Visualize your coding journey with detailed insights</p>
           </div>
           <ResetStatsDialog onStatsReset={onStatsReset} />
         </div>

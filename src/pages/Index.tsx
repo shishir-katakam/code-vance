@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -110,10 +111,10 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4">
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-white text-xl font-medium animate-pulse">Loading your coding journey...</div>
+          <div className="w-12 h-12 md:w-16 md:h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-white text-lg md:text-xl font-medium animate-pulse text-center">Loading your coding journey...</div>
         </div>
       </div>
     );
@@ -156,41 +157,42 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
       {/* Animated background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+        <div className="absolute -top-40 -right-40 w-60 h-60 md:w-80 md:h-80 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-60 h-60 md:w-80 md:h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 md:w-96 md:h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
 
       {/* Header */}
       <header className={`relative bg-black/30 backdrop-blur-xl border-b border-white/10 shadow-2xl transition-all duration-500 ${showDemoTour && currentStep.highlight === 'header' ? 'ring-4 ring-purple-400/50 z-50' : ''}`}>
-        <div className="container mx-auto px-6 py-6">
+        <div className="container mx-auto px-4 md:px-6 py-4 md:py-6">
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3 group">
+            <div className="flex items-center space-x-2 md:space-x-3 group">
               <div className="relative">
-                <Code2 className="h-10 w-10 text-purple-400 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12" />
+                <Code2 className="h-8 w-8 md:h-10 md:w-10 text-purple-400 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12" />
                 <div className="absolute inset-0 bg-purple-400/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
+                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
                   Codevance
                 </h1>
-                <p className="text-xs text-purple-300/70 font-medium tracking-wider">ELEVATE YOUR CODING</p>
+                <p className="text-xs text-purple-300/70 font-medium tracking-wider hidden sm:block">ELEVATE YOUR CODING</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 md:space-x-4">
               <Button 
                 variant="ghost" 
                 onClick={() => setCurrentView('login')}
-                className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-transparent hover:border-white/20 backdrop-blur-sm"
+                className="text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 border border-transparent hover:border-white/20 backdrop-blur-sm text-sm md:text-base px-3 md:px-4 py-2"
               >
                 Sign In
               </Button>
               <Button 
                 onClick={() => setCurrentView('signup')}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105 border-0"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105 border-0 text-sm md:text-base px-3 md:px-4 py-2"
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Get Started
+                <Sparkles className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                <span className="hidden sm:inline">Get Started</span>
+                <span className="sm:hidden">Start</span>
               </Button>
             </div>
           </div>
@@ -198,39 +200,39 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <main className="relative container mx-auto px-6 py-20">
-        <div className="text-center mb-24 animate-fade-in">
-          <div className="inline-flex items-center space-x-2 bg-purple-500/10 backdrop-blur-sm border border-purple-500/20 rounded-full px-6 py-2 mb-8 animate-pulse">
-            <Zap className="w-4 h-4 text-purple-400" />
-            <span className="text-purple-300 text-sm font-medium">Powered by AI Intelligence</span>
+      <main className="relative container mx-auto px-4 md:px-6 py-12 md:py-20">
+        <div className="text-center mb-16 md:mb-24 animate-fade-in">
+          <div className="inline-flex items-center space-x-2 bg-purple-500/10 backdrop-blur-sm border border-purple-500/20 rounded-full px-4 md:px-6 py-2 mb-6 md:mb-8 animate-pulse">
+            <Zap className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
+            <span className="text-purple-300 text-xs md:text-sm font-medium">Powered by AI Intelligence</span>
           </div>
           
-          <h2 className="text-6xl md:text-7xl font-bold text-white mb-8 leading-tight">
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 md:mb-8 leading-tight px-2">
             Master Your
             <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent animate-pulse">
               Coding Journey
             </span>
           </h2>
           
-          <p className="text-xl text-slate-300 mb-12 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-slate-300 mb-8 md:mb-12 max-w-4xl mx-auto leading-relaxed px-4">
             Transform your programming skills with intelligent tracking, real-time analytics, and AI-powered insights across all major coding platforms.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center px-4">
             <Button 
               size="lg"
               onClick={() => setCurrentView('signup')}
-              className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white px-10 py-4 rounded-2xl text-lg font-semibold shadow-2xl hover:shadow-purple-500/30 transition-all duration-500 hover:scale-105 group bg-size-200 hover:bg-pos-100"
+              className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white px-8 md:px-10 py-3 md:py-4 rounded-2xl text-base md:text-lg font-semibold shadow-2xl hover:shadow-purple-500/30 transition-all duration-500 hover:scale-105 group bg-size-200 hover:bg-pos-100 w-full sm:w-auto"
               style={{ backgroundSize: '200% 100%' }}
             >
-              <Rocket className="w-5 h-5 mr-3 group-hover:animate-bounce" />
+              <Rocket className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 group-hover:animate-bounce" />
               Start Your Journey
             </Button>
             <Button 
               variant="outline"
               size="lg"
               onClick={startDemoTour}
-              className="border-2 border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 hover:border-white/40 px-10 py-4 rounded-2xl text-lg font-semibold transition-all duration-300 hover:scale-105"
+              className="border-2 border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 hover:border-white/40 px-8 md:px-10 py-3 md:py-4 rounded-2xl text-base md:text-lg font-semibold transition-all duration-300 hover:scale-105 w-full sm:w-auto"
             >
               Watch Demo
             </Button>
@@ -238,7 +240,7 @@ const Index = () => {
         </div>
 
         {/* Enhanced Features Grid */}
-        <div className={`grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-24 transition-all duration-500 ${showDemoTour && currentStep.highlight === 'features' ? 'ring-4 ring-purple-400/50 rounded-2xl p-4' : ''}`}>
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-16 md:mb-24 px-4 transition-all duration-500 ${showDemoTour && currentStep.highlight === 'features' ? 'ring-4 ring-purple-400/50 rounded-2xl p-4' : ''}`}>
           {[
             {
               icon: Target,
@@ -270,24 +272,24 @@ const Index = () => {
             }
           ].map((feature, index) => (
             <Card key={index} className={`bg-black/40 border-white/10 backdrop-blur-xl hover:bg-black/60 transition-all duration-500 hover:scale-105 hover:-translate-y-2 group animate-fade-in ${feature.delay} hover:shadow-2xl hover:shadow-purple-500/10`}>
-              <CardHeader className="text-center pb-4">
-                <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${feature.color} p-4 mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                  <feature.icon className="w-8 h-8 text-white" />
+              <CardHeader className="text-center pb-3 md:pb-4">
+                <div className={`w-12 h-12 md:w-16 md:h-16 mx-auto rounded-2xl bg-gradient-to-br ${feature.color} p-3 md:p-4 mb-3 md:mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                  <feature.icon className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
-                <CardTitle className="text-white text-xl font-semibold group-hover:text-purple-300 transition-colors duration-300">
+                <CardTitle className="text-white text-lg md:text-xl font-semibold group-hover:text-purple-300 transition-colors duration-300">
                   {feature.title}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-slate-300 leading-relaxed">{feature.description}</p>
+              <CardContent className="text-center px-4 md:px-6">
+                <p className="text-slate-300 leading-relaxed text-sm md:text-base">{feature.description}</p>
               </CardContent>
             </Card>
           ))}
         </div>
 
         {/* Enhanced Stats Section */}
-        <div className={`bg-black/30 backdrop-blur-xl rounded-3xl border border-white/10 p-12 mb-24 animate-fade-in delay-500 transition-all duration-500 ${showDemoTour && currentStep.highlight === 'stats' ? 'ring-4 ring-purple-400/50' : ''}`}>
-          <div className="grid md:grid-cols-3 gap-12 text-center">
+        <div className={`bg-black/30 backdrop-blur-xl rounded-3xl border border-white/10 p-8 md:p-12 mb-16 md:mb-24 mx-4 animate-fade-in delay-500 transition-all duration-500 ${showDemoTour && currentStep.highlight === 'stats' ? 'ring-4 ring-purple-400/50' : ''}`}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 text-center">
             {[
               { 
                 number: statsLoading ? '...' : formatNumber(stats.total_users || 0), 
@@ -312,21 +314,21 @@ const Index = () => {
               }
             ].map((stat, index) => (
               <div key={index} className="group">
-                <div className="flex items-center justify-center mb-4">
-                  <stat.icon className="w-8 h-8 text-purple-400 group-hover:scale-110 transition-transform duration-300" />
+                <div className="flex items-center justify-center mb-3 md:mb-4">
+                  <stat.icon className="w-6 h-6 md:w-8 md:h-8 text-purple-400 group-hover:scale-110 transition-transform duration-300" />
                   {stat.isRealTime && !statsLoading && (
                     <div className="ml-2 flex items-center">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-green-400 rounded-full animate-pulse"></div>
                       <span className="text-xs text-green-400 ml-1">LIVE</span>
                     </div>
                   )}
                 </div>
-                <div className="text-4xl md:text-5xl font-bold text-white mb-2 bg-gradient-to-br from-white to-purple-200 bg-clip-text text-transparent">
+                <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 bg-gradient-to-br from-white to-purple-200 bg-clip-text text-transparent">
                   {stat.number}
                 </div>
-                <div className="text-slate-300 font-medium">{stat.label}</div>
+                <div className="text-slate-300 font-medium text-sm md:text-base">{stat.label}</div>
                 {stat.isRealTime && !statsLoading && (
-                  <div className="text-xs text-slate-500 mt-1">
+                  <div className="text-xs text-slate-500 mt-1 hidden md:block">
                     Real-time data • Updated {new Date(stats.last_updated).toLocaleTimeString()}
                   </div>
                 )}
@@ -334,40 +336,40 @@ const Index = () => {
             ))}
           </div>
           {!statsLoading && (stats.total_users > 0 || stats.total_problems > 0) && (
-            <div className="text-center mt-8 text-sm text-slate-400">
+            <div className="text-center mt-6 md:mt-8 text-xs md:text-sm text-slate-400">
               📊 All statistics update automatically as users interact with the platform
             </div>
           )}
         </div>
 
         {/* Enhanced CTA Section */}
-        <div className={`text-center bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-purple-600/20 backdrop-blur-xl rounded-3xl border border-white/10 p-16 animate-fade-in delay-700 transition-all duration-500 ${showDemoTour && currentStep.highlight === 'cta' ? 'ring-4 ring-purple-400/50' : ''}`}>
-          <div className="inline-flex items-center space-x-2 bg-purple-500/20 backdrop-blur-sm border border-purple-500/30 rounded-full px-6 py-2 mb-8">
-            <Sparkles className="w-4 h-4 text-purple-400" />
-            <span className="text-purple-300 text-sm font-medium">Join the Revolution</span>
+        <div className={`text-center bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-purple-600/20 backdrop-blur-xl rounded-3xl border border-white/10 p-8 md:p-16 mx-4 animate-fade-in delay-700 transition-all duration-500 ${showDemoTour && currentStep.highlight === 'cta' ? 'ring-4 ring-purple-400/50' : ''}`}>
+          <div className="inline-flex items-center space-x-2 bg-purple-500/20 backdrop-blur-sm border border-purple-500/30 rounded-full px-4 md:px-6 py-2 mb-6 md:mb-8">
+            <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
+            <span className="text-purple-300 text-xs md:text-sm font-medium">Join the Revolution</span>
           </div>
           
-          <h3 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+          <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6 leading-tight px-2">
             Ready to 
             <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> Dominate </span>
             Your Coding Goals?
           </h3>
           
-          <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-slate-300 mb-8 md:mb-10 max-w-2xl mx-auto px-4">
             Join thousands of developers who are already accelerating their programming journey with our intelligent tracking platform.
           </p>
           
           <Button 
             size="lg"
             onClick={() => setCurrentView('signup')}
-            className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white px-12 py-6 rounded-2xl text-xl font-semibold shadow-2xl hover:shadow-purple-500/40 transition-all duration-500 hover:scale-110 group"
+            className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white px-8 md:px-12 py-4 md:py-6 rounded-2xl text-lg md:text-xl font-semibold shadow-2xl hover:shadow-purple-500/40 transition-all duration-500 hover:scale-110 group w-full sm:w-auto"
           >
-            <Rocket className="w-6 h-6 mr-3 group-hover:animate-bounce" />
+            <Rocket className="w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 group-hover:animate-bounce" />
             Launch Your Journey Now
-            <Sparkles className="w-6 h-6 ml-3 group-hover:animate-pulse" />
+            <Sparkles className="w-5 h-5 md:w-6 md:h-6 ml-2 md:ml-3 group-hover:animate-pulse" />
           </Button>
           
-          <p className="text-sm text-slate-400 mt-6">
+          <p className="text-xs md:text-sm text-slate-400 mt-4 md:mt-6 px-4">
             ✨ Free forever • No credit card required • Setup in 30 seconds
           </p>
         </div>
@@ -375,7 +377,7 @@ const Index = () => {
 
       {/* Demo Tour Dialog */}
       <Dialog open={showDemoTour} onOpenChange={setShowDemoTour}>
-        <DialogContent className="bg-gradient-to-br from-slate-900 to-purple-900 border-purple-500/20 max-w-2xl">
+        <DialogContent className="bg-gradient-to-br from-slate-900 to-purple-900 border-purple-500/20 max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
           <DialogHeader className="relative">
             <Button
               variant="ghost"
@@ -385,25 +387,25 @@ const Index = () => {
             >
               <X className="w-4 h-4" />
             </Button>
-            <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
+            <DialogTitle className="text-xl md:text-2xl font-bold text-white flex items-center gap-3 pr-8">
               {currentStep.isNotice ? (
-                <Info className="w-6 h-6 text-yellow-400" />
+                <Info className="w-5 h-5 md:w-6 md:h-6 text-yellow-400" />
               ) : (
-                <Sparkles className="w-6 h-6 text-purple-400" />
+                <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-purple-400" />
               )}
               {currentStep.title}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-6">
-            <DialogDescription className="text-slate-300 text-lg leading-relaxed">
+          <div className="space-y-4 md:space-y-6">
+            <DialogDescription className="text-slate-300 text-base md:text-lg leading-relaxed">
               {currentStep.description}
             </DialogDescription>
             
             {currentStep.isNotice && (
               <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <Info className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+                  <Info className="w-4 h-4 md:w-5 md:h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
                   <div className="text-yellow-200 text-sm">
                     <p className="font-medium mb-1">API Limitations</p>
                     <p>Due to platform restrictions, we can only track the total number of problems solved on each platform. Individual problem details and real-time progress tracking are not available through official APIs.</p>
@@ -419,7 +421,7 @@ const Index = () => {
                     key={index}
                     className={`w-2 h-2 rounded-full transition-all duration-300 ${
                       index === currentTourStep 
-                        ? 'bg-purple-400 w-8' 
+                        ? 'bg-purple-400 w-6 md:w-8' 
                         : index < currentTourStep 
                           ? 'bg-purple-600' 
                           : 'bg-slate-600'
@@ -428,32 +430,34 @@ const Index = () => {
                 ))}
               </div>
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3">
                 <Button
                   variant="ghost"
                   onClick={prevTourStep}
                   disabled={currentTourStep === 0}
-                  className="text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-50"
+                  className="text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-50 text-sm md:text-base px-3 md:px-4 py-2"
                 >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Previous
+                  <ChevronLeft className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                  <span className="hidden sm:inline">Previous</span>
+                  <span className="sm:hidden">Prev</span>
                 </Button>
                 
                 {currentTourStep < tourSteps.length - 1 ? (
                   <Button
                     onClick={nextTourStep}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-sm md:text-base px-3 md:px-4 py-2"
                   >
                     Next
-                    <ChevronRight className="w-4 h-4 ml-1" />
+                    <ChevronRight className="w-3 h-3 md:w-4 md:h-4 ml-1" />
                   </Button>
                 ) : (
                   <Button
                     onClick={closeDemoTour}
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-sm md:text-base px-3 md:px-4 py-2"
                   >
-                    Get Started
-                    <Rocket className="w-4 h-4 ml-1" />
+                    <span className="hidden sm:inline">Get Started</span>
+                    <span className="sm:hidden">Start</span>
+                    <Rocket className="w-3 h-3 md:w-4 md:h-4 ml-1" />
                   </Button>
                 )}
               </div>
