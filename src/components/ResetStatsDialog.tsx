@@ -27,13 +27,29 @@ const ResetStatsDialog = ({ onStatsReset }: ResetStatsDialogProps) => {
   const handleResetStats = async () => {
     setIsResetting(true);
     try {
-      const { error } = await supabase.rpc('reset_platform_stats');
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (error) throw error;
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Delete all problems for the current user
+      const { error: deleteError } = await supabase
+        .from('problems')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (deleteError) throw deleteError;
+
+      // Reset platform stats
+      const { error: resetError } = await supabase.rpc('reset_platform_stats');
+      
+      if (resetError) throw resetError;
 
       toast({
         title: "Success",
-        description: "Platform statistics have been reset successfully.",
+        description: "Your statistics and problems have been reset successfully.",
       });
 
       if (onStatsReset) {
@@ -67,7 +83,7 @@ const ResetStatsDialog = ({ onStatsReset }: ResetStatsDialogProps) => {
         <AlertDialogHeader>
           <AlertDialogTitle className="text-white flex items-center gap-3">
             <AlertTriangle className="w-6 h-6 text-red-400" />
-            Reset Platform Statistics
+            Reset Your Statistics
           </AlertDialogTitle>
           <AlertDialogDescription className="text-slate-300">
             <div className="space-y-3">
@@ -75,16 +91,17 @@ const ResetStatsDialog = ({ onStatsReset }: ResetStatsDialogProps) => {
                 ⚠️ This action cannot be undone!
               </div>
               <div>
-                This will permanently reset all platform statistics including:
+                This will permanently reset your personal statistics including:
               </div>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>Total users count</li>
-                <li>Total problems count</li>
-                <li>All historical data</li>
+                <li>All your problems will be deleted</li>
+                <li>Your completion progress</li>
+                <li>Your weekly activity data</li>
+                <li>Platform-wide statistics</li>
               </ul>
               <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-4">
                 <div className="text-red-200 text-sm font-medium">
-                  Are you absolutely sure you want to proceed?
+                  Your account will remain active. Are you sure you want to proceed?
                 </div>
               </div>
             </div>
@@ -99,7 +116,7 @@ const ResetStatsDialog = ({ onStatsReset }: ResetStatsDialogProps) => {
             disabled={isResetting}
             className="bg-red-600 hover:bg-red-700 text-white"
           >
-            {isResetting ? 'Resetting...' : 'Yes, Reset All Stats'}
+            {isResetting ? 'Resetting...' : 'Yes, Reset Everything'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

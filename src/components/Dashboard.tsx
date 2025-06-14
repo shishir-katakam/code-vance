@@ -202,8 +202,11 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     // Reload problems data after stats reset
     await loadProblems();
     
-    // Force a complete refresh to ensure all stats are updated
-    window.location.reload();
+    // Show updated stats immediately
+    toast({
+      title: "Reset Complete",
+      description: "All your statistics have been cleared successfully.",
+    });
   };
 
   if (isLoading) {
