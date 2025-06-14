@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -72,7 +73,7 @@ serve(async (req) => {
         console.log(`Found ${solvedCount} problems solved on GeeksforGeeks`)
         
         if (solvedCount > 0) {
-          // Generate problems based on actual count - HANDLE ANY NUMBER (no limit at 1000 or anywhere else)
+          // Generate problems based on actual count - HANDLE ANY NUMBER (no limit)
           const gfgProblemNames = [
             'Reverse an Array',
             'Missing number in array', 
