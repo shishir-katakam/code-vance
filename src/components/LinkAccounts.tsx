@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +43,7 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
   const platforms = [
     { name: 'LeetCode', icon: '💻', color: 'bg-gradient-to-r from-orange-500 to-red-500', description: 'Lightning-fast LeetCode sync', hasSync: true },
     { name: 'CodeChef', icon: '🍳', color: 'bg-gradient-to-r from-purple-500 to-indigo-500', description: 'CodeChef platform linking', hasSync: false },
+    { name: 'HackerRank', icon: '🎯', color: 'bg-gradient-to-r from-green-500 to-blue-500', description: 'HackerRank platform linking', hasSync: false },
     { name: 'GeeksforGeeks', icon: '🤓', color: 'bg-gradient-to-r from-yellow-500 to-orange-500', description: 'Smart GFG integration', hasSync: true },
   ];
 
@@ -327,7 +327,7 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
       globalSyncState.syncProgress[account.platform] = 50;
       console.log(`📊 Received ${data.problems.length} problems from ${account.platform}`);
       
-      // Process with enhanced performance tracking
+      // Process with enhanced performance tracking and NO LIMIT
       const syncedCount = await processProblemsWithMetrics(data.problems, account.id, account.platform, startTime);
       
       // Update sync completion
@@ -365,7 +365,9 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
 
     let syncedCount = 0;
     const total = problems.length;
-    const batchSize = 10; // Process in optimized batches
+    const batchSize = 50; // Increased batch size for better performance with large datasets
+
+    console.log(`Processing ${total} problems in batches of ${batchSize}`);
 
     for (let i = 0; i < problems.length; i += batchSize) {
       const batch = problems.slice(i, Math.min(i + batchSize, problems.length));
@@ -424,8 +426,10 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
       globalSyncState.syncProgress[platform] = progress;
       globalSyncState.syncSpeed[platform] = currentSpeed;
       
+      console.log(`Processed batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(total/batchSize)}: ${syncedCount}/${total} problems synced (${currentSpeed} problems/sec)`);
+      
       // Real-time UI updates every few batches
-      if (i % (batchSize * 3) === 0 && onProblemsUpdate) {
+      if (i % (batchSize * 2) === 0 && onProblemsUpdate) {
         onProblemsUpdate();
       }
     }
@@ -435,6 +439,7 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
       onProblemsUpdate();
     }
 
+    console.log(`Sync completed: ${syncedCount} problems processed out of ${total} total`);
     return syncedCount;
   };
 
