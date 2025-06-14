@@ -264,7 +264,6 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }: LoginFormProps) => {
           </CardContent>
         </Card>
       </div>
-      <Footer />
     </div>
   );
 };
