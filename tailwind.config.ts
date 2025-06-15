@@ -104,23 +104,23 @@ export default {
 						transform: 'translateY(0)'
 					}
 				},
-				'float': {
+				'gentle-float': {
 					'0%, 100%': {
 						transform: 'translateY(0px)'
 					},
 					'50%': {
-						transform: 'translateY(-6px)'
+						transform: 'translateY(-1px)'
 					}
 				},
-				'float-delayed': {
+				'gentle-float-delayed': {
 					'0%, 100%': {
 						transform: 'translateY(0px)'
 					},
 					'50%': {
-						transform: 'translateY(-4px)'
+						transform: 'translateY(-2px)'
 					}
 				},
-				'float-slow': {
+				'gentle-float-slow': {
 					'0%, 100%': {
 						transform: 'translateY(0px)'
 					},
@@ -134,9 +134,9 @@ export default {
 				'accordion-up': 'accordion-up 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 				'fade-in': 'fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
 				'slide-up': 'slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-				'float': 'float 4s ease-in-out infinite',
-				'float-delayed': 'float-delayed 5s ease-in-out infinite',
-				'float-slow': 'float-slow 6s ease-in-out infinite'
+				'gentle-float': 'gentle-float 4s ease-in-out infinite',
+				'gentle-float-delayed': 'gentle-float-delayed 5s ease-in-out infinite',
+				'gentle-float-slow': 'gentle-float-slow 6s ease-in-out infinite'
 			},
 			transitionTimingFunction: {
 				'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
