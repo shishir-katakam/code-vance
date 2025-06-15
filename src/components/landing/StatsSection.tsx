@@ -29,7 +29,7 @@ const StatsSection = ({
       {[
         {
           number: loading ? "..." : formatNumber(realUserCount ?? 0),
-          label: "Active Developers",
+          label: "Total Developers",
           icon: Users,
           isRealTime: true
         },
