@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import DashboardHeader from './Dashboard/DashboardHeader';
 import StatsCards from './Dashboard/StatsCards';
 import DashboardTabs from './Dashboard/DashboardTabs';
+import useDashboardSession from './Dashboard/useDashboardSession';
+import { useProblems } from './Dashboard/useProblems';
 
 interface Problem {
   id: number;
@@ -35,208 +37,21 @@ interface DashboardProps {
 }
 
 const Dashboard = ({ onLogout }: DashboardProps) => {
-  const [problems, setProblems] = useState<Problem[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [problemsTabKey, setProblemsTabKey] = useState(0);
-  const { toast } = useToast();
+  // Authentication/session state comes from new hook
+  const { user, isLoading } = useDashboardSession(onLogout);
 
-  // Check authentication and load user data
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        await loadProblems();
-      } else {
-        if (onLogout) onLogout();
-      }
-      setIsLoading(false);
-    };
-
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          loadProblems();
-        } else {
-          setUser(null);
-          setProblems([]);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [onLogout]);
-
-  // Fetches all user problems regardless of count (works for large datasets)
-  const loadProblems = async () => {
-    try {
-      let allProblems: any[] = [];
-      let from = 0;
-      const batchSize = 1000;
-      let keepFetching = true;
-
-      while (keepFetching) {
-        const { data, error, count } = await supabase
-          .from('problems')
-          .select('*', { count: 'exact', head: false })
-          .order('date_added', { ascending: false })
-          .range(from, from + batchSize - 1);
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          allProblems = allProblems.concat(data);
-          if (data.length < batchSize) {
-            keepFetching = false; // No more data left to fetch
-          } else {
-            from += batchSize;
-          }
-        } else {
-          keepFetching = false;
-        }
-      }
-
-      const formattedProblems = allProblems.map(problem => ({
-        id: problem.id,
-        name: problem.name,
-        description: problem.description || '',
-        platform: problem.platform || '',
-        topic: problem.topic || '',
-        language: problem.language || '',
-        difficulty: problem.difficulty || '',
-        completed: problem.completed,
-        dateAdded: problem.date_added ? problem.date_added.split('T')[0] : '',
-        url: problem.url || '',
-        user_id: problem.user_id
-      }));
-
-      setProblems(formattedProblems);
-    } catch (error) {
-      console.error('Error loading problems:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load problems. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleAddProblem = async (newProblem: Omit<Problem, 'id' | 'dateAdded' | 'user_id'>) => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('problems')
-        .insert({
-          name: newProblem.name,
-          description: newProblem.description,
-          platform: newProblem.platform,
-          topic: newProblem.topic,
-          language: newProblem.language,
-          difficulty: newProblem.difficulty,
-          completed: newProblem.completed,
-          url: newProblem.url,
-          user_id: user.id
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const formattedProblem = {
-        id: data.id,
-        name: data.name,
-        description: data.description || '',
-        platform: data.platform || '',
-        topic: data.topic || '',
-        language: data.language || '',
-        difficulty: data.difficulty || '',
-        completed: data.completed,
-        dateAdded: data.date_added.split('T')[0],
-        url: data.url || '',
-        user_id: data.user_id
-      };
-
-      setProblems([formattedProblem, ...problems]);
-      setShowForm(false);
-
-      toast({
-        title: "Success",
-        description: "Problem added successfully!",
-      });
-    } catch (error) {
-      console.error('Error adding problem:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add problem. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleToggleProblem = async (id: number) => {
-    const problem = problems.find(p => p.id === id);
-    if (!problem) return;
-
-    try {
-      const { error } = await supabase
-        .from('problems')
-        .update({ completed: !problem.completed })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setProblems(problems.map(problem => 
-        problem.id === id 
-          ? { ...problem, completed: !problem.completed }
-          : problem
-      ));
-
-      toast({
-        title: "Success",
-        description: `Problem marked as ${!problem.completed ? 'completed' : 'incomplete'}!`,
-      });
-    } catch (error) {
-      console.error('Error updating problem:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update problem. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      if (onLogout) {
-        onLogout();
-      }
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
-
-  const handleStatsReset = async () => {
-    // Reload problems data after stats reset
-    await loadProblems();
-    
-    // Show updated stats immediately
-    toast({
-      title: "Reset Complete",
-      description: "All your statistics have been cleared successfully.",
-    });
-  };
-
-  const handleProblemsTabFocus = () => {
-    loadProblems();
-    setProblemsTabKey((prev) => prev + 1); // force refresh child if needed
-  };
+  // Problem state and handlers from hook
+  const {
+    problems,
+    showForm,
+    setShowForm,
+    problemsTabKey,
+    loadProblems,
+    handleAddProblem,
+    handleToggleProblem,
+    handleProblemsTabFocus,
+    handleStatsReset
+  } = useProblems(user);
 
   if (isLoading) {
     return (
@@ -268,14 +83,17 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
       </div>
 
       {/* Header */}
-      <DashboardHeader userEmail={user?.email} onLogout={handleLogout} />
+      <DashboardHeader userEmail={user?.email} onLogout={async () => {
+        await supabase.auth.signOut();
+        if (onLogout) onLogout();
+      }} />
 
       {/* Stats cards */}
       <div className="relative container mx-auto px-4 md:px-6 py-6 md:py-8 flex-1">
-        <StatsCards 
-          total={stats.total} 
-          completed={stats.completed} 
-          thisWeek={stats.thisWeek} 
+        <StatsCards
+          total={stats.total}
+          completed={stats.completed}
+          thisWeek={stats.thisWeek}
         />
 
         {/* Tabs and content */}
@@ -290,7 +108,6 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
           onStatsReset={handleStatsReset}
         />
       </div>
-
       <Footer />
     </div>
   );
