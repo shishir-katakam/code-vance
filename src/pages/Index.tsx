@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/Footer';
@@ -83,13 +82,13 @@ const Index = () => {
         totalUsers = userCountData || 0;
       }
 
-      // Get total problems solved
+      // Get total problems solved with better accuracy
       const { count: totalProblems, error: problemsError } = await supabase
         .from('problems')
-        .select('*', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true });
 
       if (problemsError) {
-        console.error('Error fetching problems:', problemsError);
+        console.error('Error fetching problems count:', problemsError);
       }
 
       const newStats = {

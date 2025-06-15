@@ -35,7 +35,7 @@ const StatsSection = ({
   
   return (
     <div className={`bg-black/30 backdrop-blur-xl rounded-2xl md:rounded-3xl border border-white/10 p-6 sm:p-8 md:p-12 mb-12 sm:mb-16 md:mb-24 mx-2 sm:mx-4 animate-fade-in delay-500 transition-all duration-[900ms] ease-[cubic-bezier(.86,0,.36,1)] hover:bg-black/40 hover:border-white/20 hover:shadow-2xl hover:shadow-purple-500/10`}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 md:gap-12 text-center">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 sm:gap-8 md:gap-12 text-center">
         {[
           {
             number: loading ? "..." : formatNumber(actualUserCount),
@@ -48,13 +48,6 @@ const StatsSection = ({
             label: "Problems Solved",
             icon: Target,
             isRealTime: true
-          },
-          {
-            number: loading ? "..." : formatNumber(actualUserCount),
-            label: "Active Users",
-            icon: UserPlus,
-            isRealTime: true,
-            color: "text-green-400"
           }
         ].map((stat, index) => (
           <div 
