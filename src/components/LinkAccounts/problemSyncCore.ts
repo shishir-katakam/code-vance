@@ -43,54 +43,85 @@ export const performOptimizedSync = async (
       body: { username: account.username }
     });
 
-    // Custom: 2xx with error in body
+    // Handle the case where the edge function returns an error object in the data
     if (!error && data && typeof data === 'object' && 'error' in data && data.error) {
       await supabase
         .from('linked_accounts')
         .update({ last_sync: new Date().toISOString() })
         .eq('id', account.id);
 
+      const errorMessage = typeof data.error === 'string' ? data.error : 'Unknown error occurred';
+      
+      // Check if this is a "user not found" error vs "no problems found" case
+      const isUserNotFoundError = errorMessage.includes('not found') || 
+                                  errorMessage.includes('does not exist') ||
+                                  errorMessage.includes('User with handle');
+
+      if (isUserNotFoundError) {
+        toast({
+          title: "❌ User Not Found",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      } else {
+        // This is likely a "no problems found" case - treat as success
+        toast({
+          title: "✅ Sync Complete!",
+          description: "No solved problems found for this account. Start solving problems and sync again!",
+        });
+      }
+
+      if (onProblemsUpdate) onProblemsUpdate();
+      return;
+    }
+
+    // Handle HTTP errors from the edge function
+    if (error) {
+      const errorMessage = error.message || '';
+      const isUserNotFoundError = 
+        errorMessage.includes('not found') ||
+        errorMessage.includes('does not exist') ||
+        errorMessage.includes('User not found');
+
+      await supabase
+        .from('linked_accounts')
+        .update({ last_sync: new Date().toISOString() })
+        .eq('id', account.id);
+
+      if (isUserNotFoundError) {
+        toast({
+          title: "❌ User Not Found",
+          description: "User does not exist on this platform. Please check the username.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "✅ Sync Complete!",
+          description: "No solved problems found for this account. Start solving problems and sync again!",
+        });
+      }
+
+      if (onProblemsUpdate) onProblemsUpdate();
+      return;
+    }
+
+    // Handle successful response but check if it has the success message for zero problems
+    if (data && typeof data === 'object' && 'message' in data && data.message === "No solved problems found. Sync completed successfully.") {
+      await supabase
+        .from('linked_accounts')
+        .update({ last_sync: new Date().toISOString() })
+        .eq('id', account.id);
+
       toast({
-        title: "❌ No Problems Synced",
-        description: typeof data.error === 'string'
-          ? data.error.includes('No solved problems') || data.error.includes('not found')
-            ? "No solved problems found or user does not exist. Please check the username."
-            : data.error
-          : "No solved problems found or user does not exist. Please check the username.",
-        variant: "destructive"
+        title: "✅ Sync Complete!",
+        description: "No solved problems found for this account. Start solving problems and sync again!",
       });
 
       if (onProblemsUpdate) onProblemsUpdate();
       return;
     }
 
-    if (error) {
-      const errorMessage = error.message || '';
-      const isNoProblemsError =
-        errorMessage.includes('No solved problems found') ||
-        errorMessage.includes('user does not exist') ||
-        errorMessage.includes('No problems found') ||
-        errorMessage.includes('User not found');
-
-      if (isNoProblemsError) {
-        await supabase
-          .from('linked_accounts')
-          .update({ last_sync: new Date().toISOString() })
-          .eq('id', account.id);
-
-        toast({
-          title: "❌ No Problems Synced",
-          description: "No solved problems found or user does not exist. Please check the username.",
-          variant: "destructive"
-        });
-
-        if (onProblemsUpdate) onProblemsUpdate();
-        return;
-      }
-      throw new Error(`Sync failed: ${errorMessage}`);
-    }
-
-    // Enhanced: handle "no problems" (data exists but problems = [] or missing)
+    // Handle case where no data or empty problems array
     if (!data || !Array.isArray(data.problems) || data.problems.length === 0) {
       await supabase
         .from('linked_accounts')
@@ -99,7 +130,7 @@ export const performOptimizedSync = async (
 
       toast({
         title: "✅ Sync Complete!",
-        description: `No solved problems found for this account. Please check the username or try syncing after you've solved some problems.`,
+        description: "No solved problems found for this account. Start solving problems and sync again!",
       });
 
       if (onProblemsUpdate) onProblemsUpdate();
