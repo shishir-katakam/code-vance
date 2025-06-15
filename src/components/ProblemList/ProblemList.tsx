@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -73,7 +72,6 @@ const ProblemList = ({ problems, onToggle, onUpdate }: ProblemListProps) => {
       return;
     }
 
-    // Optimistically remove from UI
     setDeletingIds((prev) => [...prev, problem.id]);
     const origProblems = optimisticProblems || problems;
     setOptimisticProblems(origProblems.filter((p) => p.id !== problem.id));
@@ -90,10 +88,7 @@ const ProblemList = ({ problems, onToggle, onUpdate }: ProblemListProps) => {
         title: "Success",
         description: "Problem deleted successfully!",
       });
-
-      if (onUpdate) onUpdate();
     } catch (error) {
-      // Restore
       setOptimisticProblems(origProblems);
       toast({
         title: "Error",
@@ -102,6 +97,7 @@ const ProblemList = ({ problems, onToggle, onUpdate }: ProblemListProps) => {
       });
     } finally {
       setDeletingIds((prev) => prev.filter((id) => id !== problem.id));
+      if (onUpdate) onUpdate();
     }
   };
 

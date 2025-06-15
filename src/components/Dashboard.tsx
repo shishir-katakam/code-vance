@@ -39,6 +39,7 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
   const [showForm, setShowForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [problemsTabKey, setProblemsTabKey] = useState(0);
   const { toast } = useToast();
 
   // Check authentication and load user data
@@ -232,6 +233,11 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     });
   };
 
+  const handleProblemsTabFocus = () => {
+    loadProblems();
+    setProblemsTabKey((prev) => prev + 1); // force refresh child if needed
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4">
@@ -274,6 +280,7 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
 
         {/* Tabs and content */}
         <DashboardTabs
+          key={problemsTabKey}
           problems={problems}
           onAddProblem={handleAddProblem}
           onToggleProblem={handleToggleProblem}
@@ -281,6 +288,7 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
           setShowForm={setShowForm}
           loadProblems={loadProblems}
           onStatsReset={handleStatsReset}
+          onProblemsTabFocus={handleProblemsTabFocus} // (1) pass handler to DashboardTabs
         />
       </div>
 
