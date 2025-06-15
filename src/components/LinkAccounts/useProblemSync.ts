@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getPlatformData } from './PlatformConfig';
@@ -77,6 +76,7 @@ export const useProblemSync = ({ onProblemsUpdate, onSyncComplete }: UseProblemS
     });
   };
 
+  // Enhanced version: properly show user-not-found or no-problems-found as destructive toasts
   const performOptimizedSync = async (account: LinkedAccount) => {
     const startTime = Date.now();
     try {
@@ -111,9 +111,26 @@ export const useProblemSync = ({ onProblemsUpdate, onSyncComplete }: UseProblemS
         body: { username: account.username }
       });
 
-      // Handle 2xx with error in body
-      if (!error && data && typeof data === 'object' && 'error' in data) {
-        throw new Error(`Sync failed: ${typeof data.error === "string" ? data.error : JSON.stringify(data.error)}`);
+      // Custom: 2xx with error in body
+      if (!error && data && typeof data === 'object' && 'error' in data && data.error) {
+        // This includes "user not found" or "no solved problems found"
+        await supabase
+          .from('linked_accounts')
+          .update({ last_sync: new Date().toISOString() })
+          .eq('id', account.id);
+
+        toast({
+          title: "❌ No Problems Synced",
+          description: typeof data.error === 'string'
+            ? data.error.includes('No solved problems') || data.error.includes('not found')
+              ? "No solved problems found or user does not exist. Please check the username."
+              : data.error
+            : "No solved problems found or user does not exist. Please check the username.",
+          variant: "destructive"
+        });
+
+        if (onProblemsUpdate) onProblemsUpdate();
+        return;
       }
 
       if (error) {
@@ -121,7 +138,8 @@ export const useProblemSync = ({ onProblemsUpdate, onSyncComplete }: UseProblemS
         const isNoProblemsError =
           errorMessage.includes('No solved problems found') ||
           errorMessage.includes('user does not exist') ||
-          errorMessage.includes('No problems found');
+          errorMessage.includes('No problems found') ||
+          errorMessage.includes('User not found');
 
         if (isNoProblemsError) {
           await supabase
@@ -130,8 +148,9 @@ export const useProblemSync = ({ onProblemsUpdate, onSyncComplete }: UseProblemS
             .eq('id', account.id);
 
           toast({
-            title: "✅ Sync Complete!",
-            description: `Successfully synced 0 problems from ${account.platform}. No problems found for this account.`,
+            title: "❌ No Problems Synced",
+            description: "No solved problems found or user does not exist. Please check the username.",
+            variant: "destructive"
           });
 
           if (onProblemsUpdate) onProblemsUpdate();
@@ -140,7 +159,8 @@ export const useProblemSync = ({ onProblemsUpdate, onSyncComplete }: UseProblemS
         throw new Error(`Sync failed: ${errorMessage}`);
       }
 
-      if (!data) {
+      // Enhanced: handle "no problems" (data exists but problems = [] or missing)
+      if (!data || !Array.isArray(data.problems) || data.problems.length === 0) {
         await supabase
           .from('linked_accounts')
           .update({ last_sync: new Date().toISOString() })
@@ -148,24 +168,8 @@ export const useProblemSync = ({ onProblemsUpdate, onSyncComplete }: UseProblemS
 
         toast({
           title: "✅ Sync Complete!",
-          description: `Successfully synced 0 problems from ${account.platform}. No problems found for this account.`,
+          description: `No solved problems found for this account. Please check the username or try syncing after you've solved some problems.`,
         });
-
-        if (onProblemsUpdate) onProblemsUpdate();
-        return;
-      }
-
-      if (!Array.isArray(data.problems)) {
-        // handle edge responses missing problems
-        toast({
-          title: "✅ Sync Complete!",
-          description: `Successfully synced 0 problems from ${account.platform}. No problems found for this account.`,
-        });
-
-        await supabase
-          .from('linked_accounts')
-          .update({ last_sync: new Date().toISOString() })
-          .eq('id', account.id);
 
         if (onProblemsUpdate) onProblemsUpdate();
         return;
@@ -173,22 +177,7 @@ export const useProblemSync = ({ onProblemsUpdate, onSyncComplete }: UseProblemS
 
       globalSyncState.syncProgress[account.platform] = 50;
 
-      if (data.problems.length === 0) {
-        toast({
-          title: "✅ Sync Complete!",
-          description: `Successfully synced 0 problems from ${account.platform}. No problems found for this account.`,
-        });
-
-        await supabase
-          .from('linked_accounts')
-          .update({ last_sync: new Date().toISOString() })
-          .eq('id', account.id);
-
-        if (onProblemsUpdate) onProblemsUpdate();
-        return;
-      }
-
-      // Pass onProblemsUpdate so stats still update
+      // Normal logic: problems exist
       const syncedCount = await processProblemsWithMetrics(
         data.problems,
         account.id,
@@ -211,10 +200,10 @@ export const useProblemSync = ({ onProblemsUpdate, onSyncComplete }: UseProblemS
       });
 
       if (onProblemsUpdate) onProblemsUpdate();
-    } catch (error: any) {
+    } catch (err: any) {
       toast({
         title: "❌ Sync Failed",
-        description: error.message || `Failed to sync ${account.platform}. Please check your username and try again.`,
+        description: err.message || `Failed to sync ${account.platform}. Please check your username and try again.`,
         variant: "destructive",
       });
     }
