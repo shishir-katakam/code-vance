@@ -49,6 +49,7 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     loadProblems,
     handleAddProblem,
     handleToggleProblem,
+    handleProblemsTabFocus,
     handleStatsReset
   } = useProblems(user);
 
@@ -89,6 +90,7 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
         await supabase.auth.signOut();
         if (onLogout) onLogout();
       }}
+      onProblemsTabFocus={handleProblemsTabFocus}
     />
   );
 };

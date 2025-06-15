@@ -21,6 +21,7 @@ interface DashboardLayoutProps {
   onToggleProblem: (id: number) => Promise<void>;
   onStatsReset: () => Promise<void>;
   onLogout: () => void;
+  onProblemsTabFocus: () => void;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({
@@ -35,6 +36,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   onToggleProblem,
   onStatsReset,
   onLogout,
+  onProblemsTabFocus,
 }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col">
@@ -65,6 +67,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           setShowForm={setShowForm}
           loadProblems={loadProblems}
           onStatsReset={onStatsReset}
+          onProblemsTabFocus={onProblemsTabFocus}
         />
       </div>
       <Footer />
