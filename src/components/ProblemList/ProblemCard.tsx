@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -149,11 +148,7 @@ const ProblemCard = ({
                   <Trash2 className={`h-4 w-4 ${deleting ? 'animate-spin' : ''}`} />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent
-                // Remove all position overrides! Use default centering and adjust padding if needed
-                className="bg-black/90 border-white/20 sm:rounded-lg flex flex-col items-center justify-center p-6 w-full max-w-md"
-                // ^ "flex flex-col items-center justify-center" ensures perfect centering for content inside
-              >
+              <AlertDialogContent className="bg-black/90 border-white/20 sm:rounded-lg max-w-sm mx-4">
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-white text-center">Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription className="text-gray-300 text-center">
