@@ -1,4 +1,7 @@
-import { useProblemSync, globalSyncState, LinkedAccount } from './useProblemSync';
+
+// Import types from problemSyncTypes, not useProblemSync!
+import { useProblemSync } from './useProblemSync';
+import { globalSyncState, LinkedAccount } from './problemSyncTypes';
 
 interface SyncManagerProps {
   onProblemsUpdate?: () => void;

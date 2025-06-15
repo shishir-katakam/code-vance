@@ -8,7 +8,7 @@ import AccountList from './LinkAccounts/AccountList';
 import EmptyState from './LinkAccounts/EmptyState';
 import { useSyncManager } from './LinkAccounts/SyncManager';
 import { getPlatformData } from './LinkAccounts/PlatformConfig';
-import { globalSyncState } from './LinkAccounts/useProblemSync';
+import { globalSyncState } from './LinkAccounts/problemSyncTypes';
 
 interface LinkedAccount {
   id: string;
