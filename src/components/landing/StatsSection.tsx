@@ -34,7 +34,7 @@ const StatsSection = ({
   const actualProblemsCount = stats.total_problems ?? 0;
   
   return (
-    <div className="bg-black/30 backdrop-blur-xl rounded-2xl md:rounded-3xl border border-white/10 p-6 sm:p-8 md:p-12 mb-12 sm:mb-16 md:mb-24 mx-2 sm:mx-4 animate-fade-in delay-500">
+    <div className="bg-black/30 backdrop-blur-xl rounded-2xl md:rounded-3xl border border-white/10 p-6 sm:p-8 md:p-12 mb-12 sm:mb-16 md:mb-24 mx-2 sm:mx-4 animate-fade-in animate-float-delayed delay-500">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 sm:gap-8 md:gap-12 text-center">
         {[
           {
@@ -52,7 +52,7 @@ const StatsSection = ({
         ].map((stat, index) => (
           <div 
             key={index} 
-            className="group"
+            className={`group ${index === 0 ? 'animate-float' : 'animate-float-slow'}`}
             style={{ 
               animationDelay: `${500 + index * 200}ms`,
               animationDuration: "1000ms"
@@ -64,7 +64,7 @@ const StatsSection = ({
               </div>
               {stat.isRealTime && (
                 <div className="ml-1.5 sm:ml-2 flex items-center">
-                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 bg-green-400 rounded-full animate-subtle-pulse shadow-lg shadow-green-400/50"></div>
+                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
                   <span className="text-xs sm:text-xs md:text-xs text-green-400 ml-1 font-medium">LIVE</span>
                 </div>
               )}

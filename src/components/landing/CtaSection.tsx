@@ -8,7 +8,7 @@ interface CtaSectionProps {
 }
 
 const CtaSection = ({ onStart, highlight }: CtaSectionProps) => (
-  <div className={`text-center bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-purple-600/20 backdrop-blur-xl rounded-3xl border border-white/10 p-8 md:p-16 mx-4 animate-fade-in delay-700 ${highlight ? "ring-4 ring-purple-400/50 ring-opacity-100" : ""}`}>
+  <div className={`text-center bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-purple-600/20 backdrop-blur-xl rounded-3xl border border-white/10 p-8 md:p-16 mx-4 animate-fade-in animate-float delay-700 ${highlight ? "ring-4 ring-purple-400/50 ring-opacity-100" : ""}`}>
     <div className="inline-flex items-center space-x-2 bg-purple-500/20 backdrop-blur-sm border border-purple-500/30 rounded-full px-4 md:px-6 py-2 mb-6 md:mb-8">
       <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
       <span className="text-purple-300 text-xs md:text-sm font-medium">Join the Revolution</span>

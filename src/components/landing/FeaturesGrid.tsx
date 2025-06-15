@@ -13,6 +13,7 @@ const features = [
     description: "Automatically sync problems from LeetCode, CodeChef, GeeksforGeeks, and more with lightning-fast background processing.",
     color: "from-purple-500 to-pink-500",
     delay: "100ms",
+    animation: "animate-float"
   },
   {
     icon: TrendingUp,
@@ -20,6 +21,7 @@ const features = [
     description: "Beautiful visualizations and detailed progress charts that update in real-time as you solve problems.",
     color: "from-green-500 to-emerald-500",
     delay: "200ms",
+    animation: "animate-float-delayed"
   },
   {
     icon: Code2,
@@ -27,6 +29,7 @@ const features = [
     description: "Advanced tracking of your expertise across programming languages, algorithms, and data structures.",
     color: "from-blue-500 to-cyan-500",
     delay: "300ms",
+    animation: "animate-float-slow"
   },
   {
     icon: Users,
@@ -34,6 +37,7 @@ const features = [
     description: "Get personalized recommendations and learning paths powered by advanced Gemini AI technology.",
     color: "from-pink-500 to-rose-500",
     delay: "400ms",
+    animation: "animate-float"
   }
 ];
 
@@ -44,7 +48,7 @@ const FeaturesGrid = ({ highlight }: FeaturesGridProps) => (
     {features.map((feature, index) => (
       <Card
         key={index}
-        className="bg-black/40 border-white/10 backdrop-blur-xl hover:bg-black/60 transition-all duration-500 hover:scale-105 group animate-fade-in hover:shadow-2xl hover:shadow-purple-500/20"
+        className={`bg-black/40 border-white/10 backdrop-blur-xl hover:bg-black/60 transition-all duration-500 hover:scale-105 group animate-fade-in hover:shadow-2xl hover:shadow-purple-500/20 ${feature.animation}`}
         style={{
           animationDelay: feature.delay,
           animationDuration: "800ms"

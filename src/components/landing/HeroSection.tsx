@@ -8,7 +8,7 @@ interface HeroSectionProps {
 }
 
 const HeroSection = ({ onStart, onDemo }: HeroSectionProps) => (
-  <div className="text-center mb-16 md:mb-24 animate-fade-in">
+  <div className="text-center mb-16 md:mb-24 animate-fade-in animate-float-slow">
     <div className="inline-flex items-center space-x-2 bg-purple-500/10 backdrop-blur-sm border border-purple-500/20 rounded-full px-4 md:px-6 py-2 mb-6 md:mb-8">
       <Zap className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
       <span className="text-purple-300 text-xs md:text-sm font-medium">Powered by AI Intelligence</span>
