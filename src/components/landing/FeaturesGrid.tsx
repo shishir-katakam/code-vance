@@ -19,47 +19,47 @@ const features = [
     title: "Real-time Analytics",
     description: "Beautiful visualizations and detailed progress charts that update in real-time as you solve problems.",
     color: "from-green-500 to-emerald-500",
-    delay: "260ms",
+    delay: "200ms",
   },
   {
     icon: Code2,
     title: "Topic Mastery",
     description: "Advanced tracking of your expertise across programming languages, algorithms, and data structures.",
     color: "from-blue-500 to-cyan-500",
-    delay: "400ms",
+    delay: "300ms",
   },
   {
     icon: Users,
     title: "AI Insights",
     description: "Get personalized recommendations and learning paths powered by advanced Gemini AI technology.",
     color: "from-pink-500 to-rose-500",
-    delay: "570ms",
+    delay: "400ms",
   }
 ];
 
 const FeaturesGrid = ({ highlight }: FeaturesGridProps) => (
   <div
-    className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-16 md:mb-24 px-4 transition-all duration-[1200ms] ease-liquid ${highlight ? "ring-4 ring-purple-400/50 rounded-2xl p-4 animate-liquid-pulse" : ""}`}
+    className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-16 md:mb-24 px-4 ${highlight ? "ring-4 ring-purple-400/50 rounded-2xl p-4 animate-subtle-pulse" : ""}`}
   >
     {features.map((feature, index) => (
       <Card
         key={index}
-        className={`bg-black/40 border-white/10 backdrop-blur-xl hover:bg-black/60 transition-all duration-[1400ms] ease-liquid hover:scale-[1.08] hover:-translate-y-3 group animate-fade-in hover:shadow-2xl hover:shadow-purple-500/20 motion-safe:will-change-transform animate-liquid-float`}
+        className="bg-black/40 border-white/10 backdrop-blur-xl hover:bg-black/60 transition-all duration-500 hover:scale-105 hover:-translate-y-2 group animate-fade-in hover:shadow-2xl hover:shadow-purple-500/20 animate-gentle-float"
         style={{
           animationDelay: feature.delay,
-          animationDuration: "1200ms"
+          animationDuration: "800ms"
         }}
       >
         <CardHeader className="text-center pb-3 md:pb-4">
-          <div className={`w-12 h-12 md:w-16 md:h-16 mx-auto rounded-2xl bg-gradient-to-br ${feature.color} p-3 md:p-4 mb-3 md:mb-4 group-hover:scale-125 group-hover:rotate-12 transition-all duration-[1000ms] ease-liquid shadow-lg group-hover:shadow-xl animate-liquid-pulse`}>
-            <feature.icon className="w-6 h-6 md:w-8 md:h-8 text-white transition-all duration-700 ease-liquid group-hover:scale-110" />
+          <div className={`w-12 h-12 md:w-16 md:h-16 mx-auto rounded-2xl bg-gradient-to-br ${feature.color} p-3 md:p-4 mb-3 md:mb-4 group-hover:scale-110 transition-all duration-300 shadow-lg animate-air-flow`}>
+            <feature.icon className="w-6 h-6 md:w-8 md:h-8 text-white transition-all duration-300 group-hover:scale-105" />
           </div>
-          <CardTitle className="text-white text-lg md:text-xl font-semibold group-hover:text-purple-300 transition-all duration-[900ms] ease-liquid group-hover:scale-105">
+          <CardTitle className="text-white text-lg md:text-xl font-semibold group-hover:text-purple-300 transition-all duration-300">
             {feature.title}
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center px-4 md:px-6">
-          <p className="text-slate-300 leading-relaxed text-sm md:text-base transition-all duration-700 ease-liquid group-hover:text-slate-200 group-hover:scale-105">{feature.description}</p>
+          <p className="text-slate-300 leading-relaxed text-sm md:text-base transition-all duration-300 group-hover:text-slate-200">{feature.description}</p>
         </CardContent>
       </Card>
     ))}

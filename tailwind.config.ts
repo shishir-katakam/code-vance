@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -129,47 +130,42 @@ export default {
 						backgroundPosition: '200% center'
 					}
 				},
-				'liquid-float': {
+				'gentle-float': {
 					'0%, 100%': {
-						transform: 'translateY(0px) translateX(0px) rotate(0deg) scale(1)'
+						transform: 'translateY(0px) translateX(0px)'
 					},
-					'25%': {
-						transform: 'translateY(-8px) translateX(2px) rotate(1deg) scale(1.02)'
+					'33%': {
+						transform: 'translateY(-3px) translateX(1px)'
 					},
-					'50%': {
-						transform: 'translateY(-12px) translateX(-1px) rotate(-1deg) scale(1.05)'
-					},
-					'75%': {
-						transform: 'translateY(-6px) translateX(1px) rotate(0.5deg) scale(1.03)'
+					'66%': {
+						transform: 'translateY(-1px) translateX(-1px)'
 					}
 				},
-				'liquid-pulse': {
+				'subtle-pulse': {
 					'0%, 100%': {
-						transform: 'scale(1)',
-						filter: 'blur(0px)'
+						opacity: '1'
 					},
 					'50%': {
-						transform: 'scale(1.1)',
-						filter: 'blur(1px)'
+						opacity: '0.9'
 					}
 				},
-				'liquid-wave': {
+				'air-flow': {
 					'0%': {
-						transform: 'translateX(-100%) skewX(0deg)'
+						transform: 'translateX(-2px)'
 					},
 					'50%': {
-						transform: 'translateX(0%) skewX(-5deg)'
+						transform: 'translateX(2px)'
 					},
 					'100%': {
-						transform: 'translateX(100%) skewX(0deg)'
+						transform: 'translateX(-2px)'
 					}
 				},
-				'smooth-bounce': {
+				'soft-bounce': {
 					'0%, 100%': {
-						transform: 'translateY(0) scale(1)'
+						transform: 'translateY(0)'
 					},
 					'50%': {
-						transform: 'translateY(-10px) scale(1.05)'
+						transform: 'translateY(-2px)'
 					}
 				}
 			},
@@ -182,10 +178,10 @@ export default {
 				'glow': 'glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate',
 				'shimmer': 'shimmer 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
 				'pulse': 'pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-				'liquid-float': 'liquid-float 8s cubic-bezier(0.23, 1, 0.32, 1) infinite',
-				'liquid-pulse': 'liquid-pulse 4s cubic-bezier(0.23, 1, 0.32, 1) infinite',
-				'liquid-wave': 'liquid-wave 3s cubic-bezier(0.23, 1, 0.32, 1) infinite',
-				'smooth-bounce': 'smooth-bounce 2s cubic-bezier(0.23, 1, 0.32, 1) infinite'
+				'gentle-float': 'gentle-float 12s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite',
+				'subtle-pulse': 'subtle-pulse 6s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite',
+				'air-flow': 'air-flow 8s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite',
+				'soft-bounce': 'soft-bounce 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite'
 			},
 			transitionTimingFunction: {
 				'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
