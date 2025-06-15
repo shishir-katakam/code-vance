@@ -56,11 +56,13 @@ const Index = () => {
     }
   ];
 
-  // Fetch real statistics
+  // Fetch real statistics from profiles table (actual users) and problems table
   const fetchRealStats = async () => {
     setRealStatsLoading(true);
     try {
-      // Get total users from profiles table
+      console.log('Fetching real stats...');
+      
+      // Get total users from profiles table (this gets populated when users sign up)
       const { count: totalUsers, error: usersError } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true });
@@ -70,17 +72,21 @@ const Index = () => {
         .from('problems')
         .select('*', { count: 'exact', head: true });
 
-      if (!usersError && !problemsError) {
-        setRealStats({
-          totalUsers: totalUsers || 0,
-          totalProblems: totalProblems || 0
-        });
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+      }
+      if (problemsError) {
+        console.error('Error fetching problems:', problemsError);
       }
 
-      console.log('Real stats updated:', {
-        totalUsers,
-        totalProblems
-      });
+      const newStats = {
+        totalUsers: totalUsers || 0,
+        totalProblems: totalProblems || 0
+      };
+
+      setRealStats(newStats);
+      
+      console.log('Real stats updated:', newStats);
 
     } catch (error) {
       console.error('Error fetching real stats:', error);
@@ -117,35 +123,41 @@ const Index = () => {
 
   // Fetch real stats on component mount and set up real-time updates
   useEffect(() => {
+    // Initial fetch
     fetchRealStats();
 
     // Set up real-time subscriptions for automatic updates
     const profilesChannel = supabase
-      .channel('profiles-realtime')
+      .channel('profiles-realtime-updates')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'profiles' },
-        () => {
-          console.log('Profiles updated, refreshing stats...');
-          setTimeout(fetchRealStats, 500);
+        (payload) => {
+          console.log('Profiles table updated:', payload);
+          // Fetch updated stats after a short delay to ensure consistency
+          setTimeout(fetchRealStats, 1000);
         }
       )
       .subscribe();
 
     const problemsChannel = supabase
-      .channel('problems-realtime')
+      .channel('problems-realtime-updates')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'problems' },
-        () => {
-          console.log('Problems updated, refreshing stats...');
-          setTimeout(fetchRealStats, 500);
+        (payload) => {
+          console.log('Problems table updated:', payload);
+          // Fetch updated stats after a short delay to ensure consistency
+          setTimeout(fetchRealStats, 1000);
         }
       )
       .subscribe();
 
-    // Refresh stats every 30 seconds to ensure data is always current
-    const intervalId = setInterval(fetchRealStats, 30000);
+    // Also refresh stats every 15 seconds to ensure data is always current
+    const intervalId = setInterval(() => {
+      console.log('Periodic stats refresh...');
+      fetchRealStats();
+    }, 15000);
 
     return () => {
       supabase.removeChannel(profilesChannel);

@@ -1,5 +1,5 @@
 
-import { Users, Target, Shield, UserPlus } from "lucide-react";
+import { Users, Target, UserPlus } from "lucide-react";
 
 interface StatsSectionProps {
   loading: boolean;
@@ -9,8 +9,6 @@ interface StatsSectionProps {
     total_users?: number; 
     total_problems?: number; 
     last_updated?: string;
-    google_users?: number;
-    email_users?: number;
   };
 }
 
