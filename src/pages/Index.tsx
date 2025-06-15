@@ -7,7 +7,6 @@ import LoginForm from '@/components/LoginForm';
 import SignupForm from '@/components/SignupForm';
 import Dashboard from '@/components/Dashboard';
 import { Code2 } from 'lucide-react';
-// --- Import new sections ---
 import HeroSection from '@/components/landing/HeroSection';
 import FeaturesGrid from '@/components/landing/FeaturesGrid';
 import StatsSection from '@/components/landing/StatsSection';
@@ -15,8 +14,6 @@ import CtaSection from '@/components/landing/CtaSection';
 import DemoTourDialog from '@/components/landing/DemoTourDialog';
 
 const Index = () => {
-  // ... keep existing code (useState, auth check, view, user state, stats hooks, etc)
-
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'signup' | 'dashboard'>('landing');
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,10 +23,9 @@ const Index = () => {
 
   const [realUserCount, setRealUserCount] = useState<number | null>(null);
   const [realUserCountLoading, setRealUserCountLoading] = useState(true);
+  const [realProblemCount, setRealProblemCount] = useState<number | null>(null);
 
-  // Tour steps as before
   const tourSteps = [
-    // ... keep existing tour steps
     {
       title: "Welcome to Codevance!",
       description: "Your intelligent coding companion that tracks your programming journey across multiple platforms with real-time data updates.",
@@ -57,8 +53,8 @@ const Index = () => {
       isNotice: true
     }
   ];
+
   useEffect(() => {
-    // ... keep the same session and auth logic
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
@@ -85,27 +81,76 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    const getUserCount = async () => {
+    const fetchUserCount = async () => {
       setRealUserCountLoading(true);
-      // Use head: true for count only, and select '*' to count all rows
       const { count, error } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true });
-
       if (!error && typeof count === 'number') {
         setRealUserCount(count);
       } else {
-        // fallback: use stats.total_users if available
-        setRealUserCount(stats.total_users || 0);
+        setRealUserCount(stats.total_users || 0); // Fallback
       }
       setRealUserCountLoading(false);
     };
-    getUserCount();
 
-    // Optional: subscribe to new sign-up events (not strictly required, can be enhanced for real-time UX)
-  }, [stats.total_users]);
+    const fetchProblemCount = async () => {
+      // Direct count from problems table for immediate accuracy
+      const { count, error } = await supabase
+        .from('problems')
+        .select('*', { count: 'exact', head: true });
+      if (!error && typeof count === 'number') {
+        setRealProblemCount(count);
+      } else if (typeof stats.total_problems === 'number') {
+        setRealProblemCount(stats.total_problems); // Fallback
+      }
+    };
 
-  // Handlers for switching views, tour navigation
+    fetchUserCount();
+    fetchProblemCount();
+
+    // Subscribe to realtime inserts on profiles (user sign-ups)
+    const profilesChannel = supabase
+      .channel('profile-signups')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        (payload) => {
+          // Delay a moment to allow transaction
+          setTimeout(() => fetchUserCount(), 550);
+        }
+      )
+      .subscribe();
+
+    // Subscribe to realtime problem changes
+    const problemsChannel = supabase
+      .channel('problem-updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'problems' },
+        (payload) => {
+          setTimeout(() => fetchProblemCount(), 550);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profilesChannel);
+      supabase.removeChannel(problemsChannel);
+    };
+    // stats.total_users and stats.total_problems as fallback on change
+  }, [stats.total_users, stats.total_problems]);
+
+  // Still call fetchUserCount on fallback stat change
+  useEffect(() => {
+    if (typeof stats.total_users === 'number') {
+      setRealUserCount(stats.total_users);
+    }
+    if (typeof stats.total_problems === 'number') {
+      setRealProblemCount(stats.total_problems);
+    }
+  }, [stats.total_users, stats.total_problems]);
+
   const handleAuth = () => {};
   const handleLogout = () => setCurrentView('landing');
   const startDemoTour = () => {
@@ -136,12 +181,12 @@ const Index = () => {
   }
 
   if (user && currentView === 'dashboard') {
-    return <Dashboard onLogout={handleLogout} />;
+    return <Dashboard onLogout={() => setCurrentView('landing')} />;
   }
   if (currentView === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
-        <LoginForm onSuccess={handleAuth} onSwitchToSignup={() => setCurrentView('signup')} />
+        <LoginForm onSuccess={() => {}} onSwitchToSignup={() => setCurrentView('signup')} />
         <Footer />
       </div>
     );
@@ -149,13 +194,13 @@ const Index = () => {
   if (currentView === 'signup') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
-        <SignupForm onSuccess={handleAuth} onSwitchToLogin={() => setCurrentView('login')} />
+        <SignupForm onSuccess={() => {}} onSwitchToLogin={() => setCurrentView('login')} />
         <Footer />
       </div>
     );
   }
 
-  // Main Landing Page
+  // Main Landing Page with real-time stats
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
       {/* Animated background elements */}
@@ -165,7 +210,7 @@ const Index = () => {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 md:w-96 md:h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
       {/* Header */}
-      <header className={`relative bg-black/30 backdrop-blur-xl border-b border-white/10 shadow-2xl transition-all duration-500 ${showDemoTour && currentStep.highlight === 'header' ? 'ring-4 ring-purple-400/50 z-50' : ''}`}>
+      <header className={`relative bg-black/30 backdrop-blur-xl border-b border-white/10 shadow-2xl transition-all duration-500 ${showDemoTour && tourSteps[currentTourStep].highlight === 'header' ? 'ring-4 ring-purple-400/50 z-50' : ''}`}>
         <div className="container mx-auto px-4 md:px-6 py-4 md:py-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2 md:space-x-3 group">
@@ -202,31 +247,34 @@ const Index = () => {
       <main className="relative container mx-auto px-4 md:px-6 py-12 md:py-20">
         <HeroSection
           onStart={() => setCurrentView('signup')}
-          onDemo={startDemoTour}
+          onDemo={() => {
+            setShowDemoTour(true);
+            setCurrentTourStep(0);
+          }}
         />
         <FeaturesGrid
-          highlight={showDemoTour && currentStep.highlight === "features"}
+          highlight={showDemoTour && tourSteps[currentTourStep].highlight === "features"}
         />
         <StatsSection
           loading={realUserCountLoading}
           realUserCount={realUserCount}
           statsLoading={statsLoading}
-          stats={stats}
+          stats={{ ...stats, total_problems: realProblemCount ?? stats.total_problems }}
         />
         <CtaSection
           onStart={() => setCurrentView('signup')}
-          highlight={showDemoTour && currentStep.highlight === "cta"}
+          highlight={showDemoTour && tourSteps[currentTourStep].highlight === "cta"}
         />
       </main>
       <DemoTourDialog
         open={showDemoTour}
         onOpenChange={setShowDemoTour}
-        currentStep={currentStep}
+        currentStep={tourSteps[currentTourStep]}
         tourSteps={tourSteps}
         currentTourStep={currentTourStep}
-        nextTourStep={nextTourStep}
-        prevTourStep={prevTourStep}
-        closeDemoTour={closeDemoTour}
+        nextTourStep={() => { if (currentTourStep < tourSteps.length - 1) setCurrentTourStep(currentTourStep + 1); }}
+        prevTourStep={() => { if (currentTourStep > 0) setCurrentTourStep(currentTourStep - 1); }}
+        closeDemoTour={() => { setShowDemoTour(false); setCurrentTourStep(0); }}
       />
       <Footer />
     </div>
