@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -129,16 +130,16 @@ export default {
 				}
 			},
 			animation: {
-				'accordion-down': 'accordion-down 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-				'accordion-up': 'accordion-up 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-				'fade-in': 'fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-				'slide-up': 'slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-				'gentle-float': 'gentle-float 6s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite',
-				'gentle-float-delayed': 'gentle-float-delayed 7s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite',
-				'gentle-float-slow': 'gentle-float-slow 8s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite'
+				'accordion-down': 'accordion-down 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+				'accordion-up': 'accordion-up 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+				'fade-in': 'fade-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+				'slide-up': 'slide-up 1s cubic-bezier(0.22, 1, 0.36, 1)',
+				'gentle-float': 'gentle-float 9s cubic-bezier(0.22, 1, 0.36, 1) infinite',
+				'gentle-float-delayed': 'gentle-float-delayed 10s cubic-bezier(0.22, 1, 0.36, 1) infinite',
+				'gentle-float-slow': 'gentle-float-slow 12s cubic-bezier(0.22, 1, 0.36, 1) infinite'
 			},
 			transitionTimingFunction: {
-				'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+				'smooth': 'cubic-bezier(0.22, 1, 0.36, 1)',
 				'bounce-smooth': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
 				'elastic': 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
 				'liquid': 'cubic-bezier(0.23, 1, 0.32, 1)',
@@ -154,3 +155,4 @@ export default {
 	},
 	plugins: [require("tailwindcss-animate")],
 } satisfies Config;
+
