@@ -154,7 +154,7 @@ const ProblemCard = ({
                     Delete Problem?
                   </AlertDialogTitle>
                   <AlertDialogDescription 
-                    className="text-gray-300 text-base font-medium text-center mt-2"
+                    className="text-gray-100 text-base font-medium text-center mt-2"
                   >
                     This action cannot be undone. The problem "{problem.name}" will be permanently deleted from your collection.
                   </AlertDialogDescription>
