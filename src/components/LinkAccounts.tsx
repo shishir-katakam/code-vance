@@ -270,14 +270,11 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
     
     try {
       console.log(`🚀 Starting optimized sync for ${account.platform}`);
-      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Fast cleanup with progress tracking
       globalSyncState.syncProgress[account.platform] = 5;
-      console.log(`🧹 Clearing existing problems for ${account.platform}`);
-      
+
       const { error: deleteError } = await supabase
         .from('problems')
         .delete()
@@ -288,29 +285,20 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
       if (deleteError) {
         console.error('Error clearing existing problems:', deleteError);
       }
-
       globalSyncState.syncProgress[account.platform] = 15;
+      if (onProblemsUpdate) onProblemsUpdate();
 
-      // Immediate UI update
-      if (onProblemsUpdate) {
-        onProblemsUpdate();
-      }
-
-      // Determine sync function with enhanced mapping - only for platforms that have sync
       const syncFunctionMap = {
         'LeetCode': 'sync-leetcode',
         'GeeksforGeeks': 'sync-geeksforgeeks'
       };
-
       const syncFunction = syncFunctionMap[account.platform as keyof typeof syncFunctionMap];
       if (!syncFunction) {
         throw new Error(`${account.platform} sync not implemented`);
       }
-
       globalSyncState.syncProgress[account.platform] = 25;
       console.log(`📡 Calling ${syncFunction} for ${account.username}`);
 
-      // Execute sync with timeout and retry logic
       const { data, error } = await supabase.functions.invoke(syncFunction, {
         body: { username: account.username }
       });
@@ -320,17 +308,20 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
         throw new Error(`Sync failed: ${error.message || 'Unknown error'}`);
       }
 
-      if (!data || !data.problems) {
-        throw new Error(`No problem data received from ${account.platform}`);
+      if (!data || !Array.isArray(data.problems)) {
+        console.error('Unexpected sync response:', data);
+        toast({
+          title: "❌ Sync Failed",
+          description: `Received an unexpected response from the sync function. Please check your username and try again.`,
+          variant: "destructive",
+        });
+        return;
       }
 
       globalSyncState.syncProgress[account.platform] = 50;
       console.log(`📊 Received ${data.problems.length} problems from ${account.platform}`);
-      
-      // Process with enhanced performance tracking and NO LIMIT
       const syncedCount = await processProblemsWithMetrics(data.problems, account.id, account.platform, startTime);
-      
-      // Update sync completion
+
       await supabase
         .from('linked_accounts')
         .update({ last_sync: new Date().toISOString() })
@@ -345,7 +336,6 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
       });
 
       await loadLinkedAccounts();
-      
       if (onProblemsUpdate) {
         onProblemsUpdate();
       }
@@ -552,17 +542,21 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
         {linkedAccounts.map((account, index) => {
           const platformData = platforms.find(p => p.name === account.platform);
           return (
-            <Card key={account.id} className="bg-black/60 border-white/20 backdrop-blur-xl hover:bg-black/70 transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 shadow-xl hover:shadow-2xl animate-fade-in overflow-hidden" style={{ animationDelay: `${index * 100}ms` }}>
+            <Card
+              key={account.id}
+              className="bg-black/60 border-white/20 backdrop-blur-xl hover:bg-black/70 transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 shadow-xl hover:shadow-2xl animate-fade-in overflow-visible md:overflow-visible"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
               <CardContent className="p-4 md:p-6">
                 <div className="flex flex-col space-y-4">
                   {/* Top section with platform info */}
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-4 break-words">
                     <div className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl ${getPlatformColor(account.platform)} flex items-center justify-center text-white font-bold text-base md:text-xl shadow-lg transition-transform duration-300 hover:scale-110 flex-shrink-0`}>
                       {getPlatformIcon(account.platform)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-white font-bold text-lg md:text-xl truncate">{account.platform}</h3>
-                      <p className="text-purple-300 text-sm md:text-base font-medium truncate">@{account.username}</p>
+                      <p className="text-purple-300 text-sm md:text-base font-medium break-all truncate">@{account.username}</p>
                       {account.last_sync && (
                         <p className="text-slate-400 text-xs md:text-sm">
                           Last synced: {new Date(account.last_sync).toLocaleDateString()}
@@ -604,15 +598,15 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
                     </div>
                   )}
 
-                  {/* Action buttons section */}
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  {/* --- Action buttons: Always wrap, style for no overflow --- */}
+                  <div className="flex flex-col xs:flex-row gap-2 sm:gap-3 w-full mt-2 sm:mt-0">
                     {platformData?.hasSync && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleSyncAccount(account)}
                         disabled={syncingPlatforms.includes(account.platform)}
-                        className="text-white border-purple-500/50 hover:bg-purple-600/20 bg-purple-600/10 font-semibold hover:border-purple-400 transition-all duration-300 hover:scale-105 disabled:opacity-50 flex-1"
+                        className="text-white border-purple-500/50 hover:bg-purple-600/20 bg-purple-600/10 font-semibold hover:border-purple-400 transition-all duration-300 hover:scale-105 disabled:opacity-50 flex-1 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis"
                       >
                         <RefreshCw className={`h-4 w-4 mr-2 ${syncingPlatforms.includes(account.platform) ? 'animate-spin' : ''}`} />
                         {syncingPlatforms.includes(account.platform) ? 'Syncing...' : 'Sync Now'}
@@ -622,7 +616,7 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveAccount(account.id, account.platform, account.username)}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-all duration-300 hover:scale-105 flex-shrink-0"
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-all duration-300 hover:scale-105 flex-shrink-0 flex-1 min-w-0 whitespace-nowrap"
                     >
                       <Trash2 className="h-4 w-4" />
                       <span className="ml-2 sm:hidden">Remove</span>
