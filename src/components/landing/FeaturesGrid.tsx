@@ -44,7 +44,7 @@ const FeaturesGrid = ({ highlight }: FeaturesGridProps) => (
     {features.map((feature, index) => (
       <Card
         key={index}
-        className="bg-black/40 border-white/10 backdrop-blur-xl hover:bg-black/60 transition-all duration-500 hover:scale-105 hover:-translate-y-2 group animate-fade-in hover:shadow-2xl hover:shadow-purple-500/20 animate-air-flow"
+        className="bg-black/40 border-white/10 backdrop-blur-xl hover:bg-black/60 transition-all duration-500 hover:scale-105 group animate-fade-in hover:shadow-2xl hover:shadow-purple-500/20"
         style={{
           animationDelay: feature.delay,
           animationDuration: "800ms"
