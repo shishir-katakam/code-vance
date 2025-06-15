@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,8 +24,25 @@ export const useProblems = (user: any) => {
 
   const { toast } = useToast();
 
+  // Load problems when user changes
+  useEffect(() => {
+    if (user) {
+      console.log('User authenticated, loading problems for:', user.email);
+      loadProblems();
+    } else {
+      console.log('No user, clearing problems');
+      setProblems([]);
+    }
+  }, [user]);
+
   const loadProblems = async () => {
+    if (!user) {
+      console.log('No user available for loading problems');
+      return;
+    }
+
     try {
+      console.log('Loading problems for user:', user.id);
       let allProblems: any[] = [];
       let from = 0;
       const batchSize = 1000;
@@ -35,10 +52,14 @@ export const useProblems = (user: any) => {
         const { data, error } = await supabase
           .from('problems')
           .select('*')
+          .eq('user_id', user.id)
           .order('date_added', { ascending: false })
           .range(from, from + batchSize - 1);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error loading problems:', error);
+          throw error;
+        }
 
         if (data && data.length > 0) {
           allProblems = allProblems.concat(data);
@@ -66,6 +87,7 @@ export const useProblems = (user: any) => {
         user_id: problem.user_id,
       }));
 
+      console.log('Loaded problems:', formatted.length);
       setProblems(formatted);
     } catch (error) {
       console.error('Error loading problems:', error);
@@ -78,9 +100,17 @@ export const useProblems = (user: any) => {
   };
 
   const handleAddProblem = async (newProblem: Omit<Problem, 'id' | 'dateAdded' | 'user_id'>) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to add problems.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
+      console.log('Adding problem for user:', user.id);
       const { data, error } = await supabase
         .from('problems')
         .insert({
@@ -131,6 +161,8 @@ export const useProblems = (user: any) => {
   };
 
   const handleToggleProblem = async (id: number) => {
+    if (!user) return;
+
     const problem = problems.find(p => p.id === id);
     if (!problem) return;
 
@@ -138,7 +170,8 @@ export const useProblems = (user: any) => {
       const { error } = await supabase
         .from('problems')
         .update({ completed: !problem.completed })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -163,16 +196,20 @@ export const useProblems = (user: any) => {
   };
 
   const handleProblemsTabFocus = () => {
-    loadProblems();
-    setProblemsTabKey((prev) => prev + 1);
+    if (user) {
+      loadProblems();
+      setProblemsTabKey((prev) => prev + 1);
+    }
   };
 
   const handleStatsReset = async () => {
-    await loadProblems();
-    toast({
-      title: "Reset Complete",
-      description: "All your statistics have been cleared successfully.",
-    });
+    if (user) {
+      await loadProblems();
+      toast({
+        title: "Reset Complete",
+        description: "All your statistics have been cleared successfully.",
+      });
+    }
   };
 
   return {

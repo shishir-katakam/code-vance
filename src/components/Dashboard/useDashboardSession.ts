@@ -1,43 +1,73 @@
 
 import { useState, useEffect } from 'react';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-export interface UseDashboardSessionReturn {
-  user: any;
-  isLoading: boolean;
-  checkAuth: () => Promise<void>;
-}
-
-const useDashboardSession = (onLogout?: () => void): UseDashboardSessionReturn => {
-  const [user, setUser] = useState<any>(null);
+const useDashboardSession = (onLogout?: () => void) => {
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      setUser(session.user);
-    } else {
-      if (onLogout) onLogout();
-    }
-    setIsLoading(false);
-  };
-
   useEffect(() => {
-    checkAuth();
+    let mounted = true;
 
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
+        if (!mounted) return;
+
         if (session?.user) {
           setUser(session.user);
         } else {
           setUser(null);
+          if (event === 'SIGNED_OUT' && onLogout) {
+            onLogout();
+          }
         }
+        
+        setIsLoading(false);
       }
     );
-    return () => subscription.unsubscribe();
+
+    // Then check for existing session
+    const initializeSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!mounted) return;
+
+        if (session?.user) {
+          console.log('Found existing session for:', session.user.email);
+          setUser(session.user);
+        } else {
+          console.log('No existing session found');
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Session initialization error:', error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initializeSession();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [onLogout]);
 
-  return { user, isLoading, checkAuth };
+  return { user, isLoading };
 };
 
 export default useDashboardSession;
