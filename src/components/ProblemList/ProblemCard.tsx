@@ -149,7 +149,7 @@ const ProblemCard = ({
                   <Trash2 className={`h-4 w-4 ${deleting ? 'animate-spin' : ''}`} />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="bg-black/90 border-white/20">
+              <AlertDialogContent className="bg-black/90 border-white/20 !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2 sm:rounded-lg">
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription className="text-gray-300">
@@ -177,3 +177,4 @@ const ProblemCard = ({
 };
 
 export default ProblemCard;
+

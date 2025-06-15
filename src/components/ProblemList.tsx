@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -52,6 +51,7 @@ interface ProblemListProps {
 const ProblemList = ({ problems, onToggle, onUpdate }: ProblemListProps) => {
   const [editingProblem, setEditingProblem] = useState<Problem | null>(null);
   const [deletingIds, setDeletingIds] = useState<number[]>([]);
+  const [optimisticProblems, setOptimisticProblems] = useState<Problem[] | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
   const { toast } = useToast();
@@ -60,9 +60,10 @@ const ProblemList = ({ problems, onToggle, onUpdate }: ProblemListProps) => {
   const totalPages = Math.ceil(problems.length / itemsPerPage);
   
   // Show either first 5 problems or paginated results based on showAll state
+  const renderedProblems = optimisticProblems || problems;
   const displayedProblems = showAll 
-    ? problems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-    : problems.slice(0, itemsPerPage);
+    ? renderedProblems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : renderedProblems.slice(0, itemsPerPage);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -113,6 +114,9 @@ const ProblemList = ({ problems, onToggle, onUpdate }: ProblemListProps) => {
     }
 
     setDeletingIds(prev => [...prev, problem.id]);
+    const origProblems = optimisticProblems || problems;
+    // Optimistically remove from UI first
+    setOptimisticProblems(origProblems.filter((p) => p.id !== problem.id));
 
     try {
       const { error } = await supabase
@@ -131,7 +135,8 @@ const ProblemList = ({ problems, onToggle, onUpdate }: ProblemListProps) => {
         onUpdate();
       }
     } catch (error) {
-      console.error('Error deleting problem:', error);
+      // Restore if error
+      setOptimisticProblems(origProblems);
       toast({
         title: "Error",
         description: "Failed to delete problem.",
@@ -239,7 +244,7 @@ const ProblemList = ({ problems, onToggle, onUpdate }: ProblemListProps) => {
                         <Trash2 className={`h-4 w-4 ${deletingIds.includes(problem.id) ? 'animate-spin' : ''}`} />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-black/90 border-white/20">
+                    <AlertDialogContent className="bg-black/90 border-white/20 !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2 sm:rounded-lg">
                       <AlertDialogHeader>
                         <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription className="text-gray-300">
