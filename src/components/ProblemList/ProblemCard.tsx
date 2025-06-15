@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -149,14 +148,12 @@ const ProblemCard = ({
                   <Trash2 className={`h-4 w-4 ${deleting ? 'animate-spin' : ''}`} />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="bg-slate-800 border-slate-700 text-white max-w-md">
+              <AlertDialogContent className="max-w-md">
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="text-white text-xl font-semibold text-center">
+                  <AlertDialogTitle className="text-xl font-semibold text-center">
                     Delete Problem?
                   </AlertDialogTitle>
-                  <AlertDialogDescription 
-                    className="text-slate-200 text-base font-medium text-center mt-2"
-                  >
+                  <AlertDialogDescription className="text-base font-medium text-center mt-2">
                     This action cannot be undone. The problem "{problem.name}" will be permanently deleted from your collection.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
