@@ -12,7 +12,7 @@ import Footer from './Footer';
 import ResetStatsDialog from './ResetStatsDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import DashboardHeader from './Dashboard/DashboardHeader';
+import DashboardLayout from './Dashboard/DashboardLayout';
 import StatsCards from './Dashboard/StatsCards';
 import DashboardTabs from './Dashboard/DashboardTabs';
 import useDashboardSession from './Dashboard/useDashboardSession';
@@ -49,7 +49,6 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     loadProblems,
     handleAddProblem,
     handleToggleProblem,
-    handleProblemsTabFocus,
     handleStatsReset
   } = useProblems(user);
 
@@ -75,41 +74,22 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col">
-      {/* Animated background elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-60 h-60 md:w-80 md:h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-60 h-60 md:w-80 md:h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      </div>
-
-      {/* Header */}
-      <DashboardHeader userEmail={user?.email} onLogout={async () => {
+    <DashboardLayout
+      userEmail={user?.email}
+      stats={stats}
+      problems={problems}
+      showForm={showForm}
+      setShowForm={setShowForm}
+      problemsTabKey={problemsTabKey}
+      loadProblems={loadProblems}
+      onAddProblem={handleAddProblem}
+      onToggleProblem={handleToggleProblem}
+      onStatsReset={handleStatsReset}
+      onLogout={async () => {
         await supabase.auth.signOut();
         if (onLogout) onLogout();
-      }} />
-
-      {/* Stats cards */}
-      <div className="relative container mx-auto px-4 md:px-6 py-6 md:py-8 flex-1">
-        <StatsCards
-          total={stats.total}
-          completed={stats.completed}
-          thisWeek={stats.thisWeek}
-        />
-
-        {/* Tabs and content */}
-        <DashboardTabs
-          key={problemsTabKey}
-          problems={problems}
-          onAddProblem={handleAddProblem}
-          onToggleProblem={handleToggleProblem}
-          showForm={showForm}
-          setShowForm={setShowForm}
-          loadProblems={loadProblems}
-          onStatsReset={handleStatsReset}
-        />
-      </div>
-      <Footer />
-    </div>
+      }}
+    />
   );
 };
 
