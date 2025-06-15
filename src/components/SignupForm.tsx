@@ -96,7 +96,7 @@ const SignupForm = ({ onSuccess, onSwitchToLogin }: SignupFormProps) => {
           <div className="flex justify-center mb-4">
             <Code2 className="h-12 w-12 text-purple-400" />
           </div>
-          <CardTitle className="text-2xl font-bold text-white">Join CodeTracker</CardTitle>
+          <CardTitle className="text-2xl font-bold text-white">Join Codevance</CardTitle>
           <p className="text-gray-300">Create your account to start tracking</p>
         </CardHeader>
         <CardContent>

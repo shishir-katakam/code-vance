@@ -133,7 +133,7 @@ const LoginForm = ({ onSuccess, onSwitchToSignup }: LoginFormProps) => {
             <p className="text-gray-300">
               {showResetForm 
                 ? 'Enter your email to receive a reset link' 
-                : 'Sign in to your CodeTracker account'
+                : 'Sign in to your Codevance account'
               }
             </p>
           </CardHeader>
