@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -7,8 +6,9 @@ import { useToast } from '@/hooks/use-toast';
 import AddAccountForm from './LinkAccounts/AddAccountForm';
 import AccountList from './LinkAccounts/AccountList';
 import EmptyState from './LinkAccounts/EmptyState';
-import { useSyncManager, globalSyncState } from './LinkAccounts/SyncManager';
+import { useSyncManager } from './LinkAccounts/SyncManager';
 import { getPlatformData } from './LinkAccounts/PlatformConfig';
+import { globalSyncState } from './LinkAccounts/useProblemSync';
 
 interface LinkedAccount {
   id: string;
