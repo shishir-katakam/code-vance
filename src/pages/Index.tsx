@@ -56,31 +56,42 @@ const Index = () => {
     }
   ];
 
-  // Fetch real statistics from profiles table (actual users) and problems table
+  // Fetch real statistics from auth.users and problems table
   const fetchRealStats = async () => {
     setRealStatsLoading(true);
     try {
-      console.log('Fetching real stats...');
+      console.log('Fetching real stats from auth.users and problems...');
       
-      // Get total users from profiles table (this gets populated when users sign up)
-      const { count: totalUsers, error: usersError } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+      // Get total users from auth.users using RPC call
+      const { data: userCountData, error: usersError } = await supabase.rpc('get_user_count');
+      
+      // Fallback: Get from profiles table if RPC fails
+      let totalUsers = 0;
+      if (usersError || !userCountData) {
+        console.log('RPC failed, using profiles table fallback');
+        const { count: profilesCount, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+        
+        if (profilesError) {
+          console.error('Error fetching from profiles:', profilesError);
+        }
+        totalUsers = profilesCount || 0;
+      } else {
+        totalUsers = userCountData || 0;
+      }
 
       // Get total problems solved
       const { count: totalProblems, error: problemsError } = await supabase
         .from('problems')
         .select('*', { count: 'exact', head: true });
 
-      if (usersError) {
-        console.error('Error fetching users:', usersError);
-      }
       if (problemsError) {
         console.error('Error fetching problems:', problemsError);
       }
 
       const newStats = {
-        totalUsers: totalUsers || 0,
+        totalUsers: totalUsers,
         totalProblems: totalProblems || 0
       };
 
@@ -153,11 +164,11 @@ const Index = () => {
       )
       .subscribe();
 
-    // Also refresh stats every 15 seconds to ensure data is always current
+    // Also refresh stats every 10 seconds to ensure data is always current
     const intervalId = setInterval(() => {
       console.log('Periodic stats refresh...');
       fetchRealStats();
-    }, 15000);
+    }, 10000);
 
     return () => {
       supabase.removeChannel(profilesChannel);
