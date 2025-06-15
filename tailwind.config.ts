@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -109,7 +108,7 @@ export default {
 						transform: 'translateY(0px)'
 					},
 					'50%': {
-						transform: 'translateY(-1px)'
+						transform: 'translateY(-5px)'
 					}
 				},
 				'gentle-float-delayed': {
@@ -117,7 +116,7 @@ export default {
 						transform: 'translateY(0px)'
 					},
 					'50%': {
-						transform: 'translateY(-2px)'
+						transform: 'translateY(-6px)'
 					}
 				},
 				'gentle-float-slow': {
@@ -125,7 +124,7 @@ export default {
 						transform: 'translateY(0px)'
 					},
 					'50%': {
-						transform: 'translateY(-3px)'
+						transform: 'translateY(-7px)'
 					}
 				}
 			},
