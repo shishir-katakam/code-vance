@@ -466,16 +466,16 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
+          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
             Linked Accounts
           </h2>
-          <p className="text-slate-400 mt-1">Connect your coding platforms for lightning-fast sync</p>
+          <p className="text-slate-400 mt-1 text-sm md:text-base">Connect your coding platforms for lightning-fast sync</p>
         </div>
         <Button 
           onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105"
+          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg hover:shadow-purple-500/25 transition-all duration-300 hover:scale-105 w-full sm:w-auto"
         >
           <Plus className="h-4 w-4 mr-2" />
           Link Account
@@ -508,9 +508,9 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
                         <div className={`w-10 h-10 rounded-xl ${platform.color} flex items-center justify-center text-white font-bold shadow-lg flex-shrink-0`}>
                           {platform.icon}
                         </div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-white">{platform.name}</div>
-                          <div className="text-xs text-gray-300">{platform.description}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-white truncate">{platform.name}</div>
+                          <div className="text-xs text-gray-300 truncate">{platform.description}</div>
                         </div>
                       </div>
                     </SelectItem>
@@ -528,17 +528,17 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
                 placeholder="Your platform username"
               />
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
               <Button 
                 variant="ghost" 
                 onClick={() => setShowAddForm(false)} 
-                className="text-gray-300 hover:bg-white/10 transition-all duration-300"
+                className="text-gray-300 hover:bg-white/10 transition-all duration-300 w-full sm:w-auto"
               >
                 Cancel
               </Button>
               <Button 
                 onClick={handleAddAccount} 
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold transition-all duration-300 hover:scale-105"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold transition-all duration-300 hover:scale-105 w-full sm:w-auto"
               >
                 <Zap className="w-4 h-4 mr-2" />
                 Link Account
@@ -552,60 +552,67 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
         {linkedAccounts.map((account, index) => {
           const platformData = platforms.find(p => p.name === account.platform);
           return (
-            <Card key={account.id} className="bg-black/60 border-white/20 backdrop-blur-xl hover:bg-black/70 transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 shadow-xl hover:shadow-2xl animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-              <CardContent className="p-8">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-6">
-                    <div className={`w-16 h-16 rounded-2xl ${getPlatformColor(account.platform)} flex items-center justify-center text-white font-bold text-xl shadow-lg transition-transform duration-300 hover:scale-110`}>
+            <Card key={account.id} className="bg-black/60 border-white/20 backdrop-blur-xl hover:bg-black/70 transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 shadow-xl hover:shadow-2xl animate-fade-in overflow-hidden" style={{ animationDelay: `${index * 100}ms` }}>
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col space-y-4">
+                  {/* Top section with platform info */}
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl ${getPlatformColor(account.platform)} flex items-center justify-center text-white font-bold text-base md:text-xl shadow-lg transition-transform duration-300 hover:scale-110 flex-shrink-0`}>
                       {getPlatformIcon(account.platform)}
                     </div>
-                    <div>
-                      <h3 className="text-white font-bold text-xl">{account.platform}</h3>
-                      <p className="text-purple-300 text-base font-medium">@{account.username}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-bold text-lg md:text-xl truncate">{account.platform}</h3>
+                      <p className="text-purple-300 text-sm md:text-base font-medium truncate">@{account.username}</p>
                       {account.last_sync && (
-                        <p className="text-slate-400 text-sm">
+                        <p className="text-slate-400 text-xs md:text-sm">
                           Last synced: {new Date(account.last_sync).toLocaleDateString()}
                         </p>
                       )}
-                      {syncProgress[account.platform] !== undefined && (
-                        <div className="mt-3 space-y-2">
-                          <div className="flex items-center space-x-3">
-                            <div className="text-blue-400 text-sm font-medium">
-                              Syncing... {syncProgress[account.platform]}%
-                            </div>
-                            {syncSpeed[account.platform] > 0 && (
-                              <div className="text-green-400 text-xs flex items-center space-x-1">
-                                <Zap className="w-3 h-3" />
-                                <span>{syncSpeed[account.platform]} problems/sec</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="w-64 h-3 bg-gray-700 rounded-full overflow-hidden">
-                            <div 
-                              className="h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-300 ease-out"
-                              style={{ width: `${syncProgress[account.platform]}%` }}
-                            />
-                          </div>
-                        </div>
-                      )}
+                    </div>
+                    <div className="flex items-center flex-shrink-0">
+                      <Badge variant={account.is_active ? "default" : "secondary"} className="flex items-center space-x-1 px-2 py-1 text-xs">
+                        {account.is_active ? (
+                          <CheckCircle className="h-3 w-3 text-green-400" />
+                        ) : (
+                          <XCircle className="h-3 w-3 text-red-400" />
+                        )}
+                        <span className="font-medium hidden sm:inline">{account.is_active ? 'Active' : 'Inactive'}</span>
+                      </Badge>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <Badge variant={account.is_active ? "default" : "secondary"} className="flex items-center space-x-2 px-3 py-1">
-                      {account.is_active ? (
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-red-400" />
-                      )}
-                      <span className="font-medium">{account.is_active ? 'Active' : 'Inactive'}</span>
-                    </Badge>
+
+                  {/* Sync progress section */}
+                  {syncProgress[account.platform] !== undefined && (
+                    <div className="space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <div className="text-blue-400 text-sm font-medium">
+                          Syncing... {syncProgress[account.platform]}%
+                        </div>
+                        {syncSpeed[account.platform] > 0 && (
+                          <div className="text-green-400 text-xs flex items-center space-x-1">
+                            <Zap className="w-3 h-3" />
+                            <span>{syncSpeed[account.platform]} problems/sec</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+                        <div 
+                          className="h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-300 ease-out"
+                          style={{ width: `${syncProgress[account.platform]}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action buttons section */}
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     {platformData?.hasSync && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleSyncAccount(account)}
                         disabled={syncingPlatforms.includes(account.platform)}
-                        className="text-white border-purple-500/50 hover:bg-purple-600/20 bg-purple-600/10 font-semibold hover:border-purple-400 transition-all duration-300 hover:scale-105 disabled:opacity-50"
+                        className="text-white border-purple-500/50 hover:bg-purple-600/20 bg-purple-600/10 font-semibold hover:border-purple-400 transition-all duration-300 hover:scale-105 disabled:opacity-50 flex-1"
                       >
                         <RefreshCw className={`h-4 w-4 mr-2 ${syncingPlatforms.includes(account.platform) ? 'animate-spin' : ''}`} />
                         {syncingPlatforms.includes(account.platform) ? 'Syncing...' : 'Sync Now'}
@@ -615,9 +622,10 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveAccount(account.id, account.platform, account.username)}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-all duration-300 hover:scale-105"
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-all duration-300 hover:scale-105 flex-shrink-0"
                     >
                       <Trash2 className="h-4 w-4" />
+                      <span className="ml-2 sm:hidden">Remove</span>
                     </Button>
                   </div>
                 </div>
@@ -629,19 +637,19 @@ const LinkAccounts = ({ onProblemsUpdate }: LinkAccountsProps) => {
 
       {linkedAccounts.length === 0 && (
         <Card className="bg-black/60 border-white/20 backdrop-blur-xl shadow-2xl animate-fade-in">
-          <CardContent className="p-12 text-center">
+          <CardContent className="p-8 md:p-12 text-center">
             <div className="text-gray-400 mb-6">
-              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <ExternalLink className="h-10 w-10 text-white" />
+              <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                <ExternalLink className="h-8 w-8 md:h-10 md:w-10 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3">No Linked Accounts</h3>
-              <p className="text-lg">Connect your coding platforms to automatically sync your solved problems with lightning speed.</p>
+              <h3 className="text-xl md:text-2xl font-bold text-white mb-3">No Linked Accounts</h3>
+              <p className="text-base md:text-lg px-4">Connect your coding platforms to automatically sync your solved problems with lightning speed.</p>
             </div>
             <Button 
               onClick={() => setShowAddForm(true)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 text-lg font-semibold transition-all duration-300 hover:scale-105"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 md:px-8 md:py-3 text-base md:text-lg font-semibold transition-all duration-300 hover:scale-105 w-full sm:w-auto"
             >
-              <Plus className="h-5 w-5 mr-2" />
+              <Plus className="h-4 w-4 md:h-5 md:w-5 mr-2" />
               Link Your First Account
             </Button>
           </CardContent>
