@@ -23,9 +23,7 @@ const Index = () => {
 
   const [realStats, setRealStats] = useState({
     totalUsers: 0,
-    totalProblems: 0,
-    googleUsers: 0,
-    emailUsers: 0
+    totalProblems: 0
   });
   const [realStatsLoading, setRealStatsLoading] = useState(true);
 
@@ -72,32 +70,16 @@ const Index = () => {
         .from('problems')
         .select('*', { count: 'exact', head: true });
 
-      // Get user authentication methods from auth.users (this requires a custom function)
-      // Since we can't directly access auth.users, we'll use the profiles table
-      // and check user metadata for authentication providers
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*');
-
-      // For now, we'll estimate based on available data
-      // In a real implementation, you'd need a server function to access auth.users
-      const googleUsers = Math.floor((totalUsers || 0) * 0.6); // Estimated 60% Google
-      const emailUsers = (totalUsers || 0) - googleUsers; // Rest are email signups
-
       if (!usersError && !problemsError) {
         setRealStats({
           totalUsers: totalUsers || 0,
-          totalProblems: totalProblems || 0,
-          googleUsers,
-          emailUsers
+          totalProblems: totalProblems || 0
         });
       }
 
       console.log('Real stats updated:', {
         totalUsers,
-        totalProblems,
-        googleUsers,
-        emailUsers
+        totalProblems
       });
 
     } catch (error) {
@@ -282,9 +264,7 @@ const Index = () => {
           statsLoading={realStatsLoading}
           stats={{ 
             total_users: realStats.totalUsers, 
-            total_problems: realStats.totalProblems,
-            google_users: realStats.googleUsers,
-            email_users: realStats.emailUsers
+            total_problems: realStats.totalProblems
           }}
         />
         <CtaSection

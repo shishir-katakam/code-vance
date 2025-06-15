@@ -1,5 +1,5 @@
 
-import { Users, Target, Shield, Mail, Chrome } from "lucide-react";
+import { Users, Target, Shield, UserPlus } from "lucide-react";
 
 interface StatsSectionProps {
   loading: boolean;
@@ -31,7 +31,7 @@ const StatsSection = ({
   stats
 }: StatsSectionProps) => (
   <div className={`bg-black/30 backdrop-blur-xl rounded-2xl md:rounded-3xl border border-white/10 p-6 sm:p-8 md:p-12 mb-12 sm:mb-16 md:mb-24 mx-2 sm:mx-4 animate-fade-in delay-500 transition-all duration-[900ms] ease-[cubic-bezier(.86,0,.36,1)] hover:bg-black/40 hover:border-white/20 hover:shadow-2xl hover:shadow-purple-500/10`}>
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 md:gap-12 text-center">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 md:gap-12 text-center">
       {[
         {
           number: loading ? "..." : formatNumber(realUserCount ?? stats.total_users ?? 0),
@@ -46,16 +46,9 @@ const StatsSection = ({
           isRealTime: true
         },
         {
-          number: loading ? "..." : formatNumber(stats.google_users || 0),
-          label: "Google Signups",
-          icon: Chrome,
-          isRealTime: true,
-          color: "text-blue-400"
-        },
-        {
-          number: loading ? "..." : formatNumber(stats.email_users || 0),
-          label: "Email Signups",
-          icon: Mail,
+          number: loading ? "..." : formatNumber(realUserCount ?? stats.total_users ?? 0),
+          label: "Total Signups",
+          icon: UserPlus,
           isRealTime: true,
           color: "text-green-400"
         }
@@ -99,7 +92,7 @@ const StatsSection = ({
       </div>
     )}
     
-    {/* Additional info about signup methods */}
+    {/* Additional info about total signups */}
     <div className="text-center mt-3 sm:mt-4 md:mt-5 text-xs text-slate-500 px-2">
       Join {formatNumber((stats.total_users || 0))} developers tracking their coding journey
     </div>
