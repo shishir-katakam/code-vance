@@ -18,6 +18,11 @@ const Index = () => {
   const [currentTourStep, setCurrentTourStep] = useState(0);
   const { stats, isLoading: statsLoading } = usePlatformStats();
 
+  // --------- NEW: state for real user count ----------
+  const [realUserCount, setRealUserCount] = useState<number | null>(null);
+  const [realUserCountLoading, setRealUserCountLoading] = useState(true);
+  // ---------------------------------------------------
+
   const tourSteps = [
     {
       title: "Welcome to Codevance!",
@@ -75,6 +80,29 @@ const Index = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // --------- NEW: Fetch total user count from profiles table ---------
+  useEffect(() => {
+    const getUserCount = async () => {
+      setRealUserCountLoading(true);
+      // Use head: true for count only, and select '*' to count all rows
+      const { count, error } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      if (!error && typeof count === 'number') {
+        setRealUserCount(count);
+      } else {
+        // fallback: use stats.total_users if available
+        setRealUserCount(stats.total_users || 0);
+      }
+      setRealUserCountLoading(false);
+    };
+    getUserCount();
+
+    // Optional: subscribe to new sign-up events (not strictly required, can be enhanced for real-time UX)
+  }, [stats.total_users]);
+  // ---------------------------------------------------
 
   const handleAuth = () => {
     // This will be handled by the auth state change listener
@@ -291,10 +319,10 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 text-center">
             {[
               { 
-                number: statsLoading ? '...' : formatNumber(stats.total_users || 0), 
+                number: realUserCountLoading ? '...' : formatNumber(realUserCount ?? 0), 
                 label: 'Active Developers', 
                 icon: Users,
-                actualValue: stats.total_users || 0,
+                actualValue: realUserCount ?? 0,
                 isRealTime: true
               },
               { 
@@ -315,7 +343,7 @@ const Index = () => {
               <div key={index} className="group">
                 <div className="flex items-center justify-center mb-3 md:mb-4">
                   <stat.icon className="w-6 h-6 md:w-8 md:h-8 text-purple-400 group-hover:scale-110 transition-transform duration-300" />
-                  {stat.isRealTime && !statsLoading && (
+                  {stat.isRealTime && (index === 0 ? !realUserCountLoading : !statsLoading) && (
                     <div className="ml-2 flex items-center">
                       <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-green-400 rounded-full animate-pulse"></div>
                       <span className="text-xs text-green-400 ml-1">LIVE</span>
@@ -326,19 +354,19 @@ const Index = () => {
                   {stat.number}
                 </div>
                 <div className="text-slate-300 font-medium text-sm md:text-base">{stat.label}</div>
-                {stat.isRealTime && !statsLoading && (
+                {stat.isRealTime && (index === 0 ? !realUserCountLoading : !statsLoading) && (
                   <div className="text-xs text-slate-500 mt-1 hidden md:block">
-                    Real-time data • Updated {new Date(stats.last_updated).toLocaleTimeString()}
+                    Real-time data • Updated {(index === 0 ? new Date().toLocaleTimeString() : new Date(stats.last_updated).toLocaleTimeString())}
                   </div>
                 )}
               </div>
             ))}
           </div>
-          {!statsLoading && (stats.total_users > 0 || stats.total_problems > 0) && (
+          {(!realUserCountLoading && realUserCount !== null && realUserCount > 0) || (!statsLoading && (stats.total_users > 0 || stats.total_problems > 0)) ? (
             <div className="text-center mt-6 md:mt-8 text-xs md:text-sm text-slate-400">
               📊 All statistics update automatically as users interact with the platform
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Enhanced CTA Section */}
