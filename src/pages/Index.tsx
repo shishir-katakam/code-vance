@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/Footer';
@@ -56,18 +57,19 @@ const Index = () => {
     }
   ];
 
-  // Fetch real statistics from auth.users and problems table
+  // Updated function to fetch real statistics from auth.users and problems table
   const fetchRealStats = async () => {
     setRealStatsLoading(true);
     try {
       console.log('Fetching real stats from auth.users and problems...');
       
-      // Get total users from auth.users using RPC call
-      const { data: userCountData, error: usersError } = await supabase.rpc('get_user_count');
+      // Get total users using direct RPC call with proper typing
+      const { data: userCountData, error: usersError } = await supabase
+        .rpc('get_user_count' as any);
       
       // Fallback: Get from profiles table if RPC fails
       let totalUsers = 0;
-      if (usersError || !userCountData) {
+      if (usersError || userCountData === null) {
         console.log('RPC failed, using profiles table fallback');
         const { count: profilesCount, error: profilesError } = await supabase
           .from('profiles')
