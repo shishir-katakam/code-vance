@@ -288,7 +288,6 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
           setShowForm={setShowForm}
           loadProblems={loadProblems}
           onStatsReset={handleStatsReset}
-          onProblemsTabFocus={handleProblemsTabFocus} // (1) pass handler to DashboardTabs
         />
       </div>
 
