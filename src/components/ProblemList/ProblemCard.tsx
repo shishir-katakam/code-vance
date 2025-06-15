@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -148,21 +149,23 @@ const ProblemCard = ({
                   <Trash2 className={`h-4 w-4 ${deleting ? 'animate-spin' : ''}`} />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="bg-black/90 border-white/20">
+              <AlertDialogContent className="bg-slate-900/95 backdrop-blur-md border border-white/20 shadow-2xl max-w-md mx-auto">
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="text-white text-center">Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription className="text-gray-300 text-center">
-                    This action cannot be undone. This will permanently delete the problem "{problem.name}".
+                  <AlertDialogTitle className="text-white text-xl font-semibold text-center">
+                    Delete Problem?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-gray-300 text-center mt-2">
+                    This action cannot be undone. The problem "{problem.name}" will be permanently deleted from your collection.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter className="flex flex-col gap-2 w-full">
+                <AlertDialogFooter className="flex flex-col gap-3 w-full mt-6">
                   <AlertDialogAction
                     onClick={() => onDelete(problem)}
-                    className="bg-red-600 hover:bg-red-700 text-white w-full"
+                    className="bg-red-600 hover:bg-red-700 text-white w-full py-3 font-medium transition-colors"
                   >
-                    Delete
+                    Delete Problem
                   </AlertDialogAction>
-                  <AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 w-full">
+                  <AlertDialogCancel className="bg-gray-700/80 text-white border-gray-600 hover:bg-gray-600 w-full py-3 font-medium transition-colors">
                     Cancel
                   </AlertDialogCancel>
                 </AlertDialogFooter>

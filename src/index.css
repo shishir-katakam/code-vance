@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -91,15 +92,49 @@
 }
 
 @layer base {
-  html, body {
+  html {
     scroll-behavior: smooth;
+    scroll-padding-top: 2rem;
+  }
+
+  body {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   * {
     @apply border-border;
+    scroll-behavior: smooth;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Enhanced scrollbar styling for smoother experience */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/20 rounded-full;
+    transition: background-color 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-white/30;
+  }
+
+  /* Smooth scrolling for all elements */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
