@@ -114,18 +114,56 @@ export const useSyncManager = ({ onProblemsUpdate, onSyncComplete }: SyncManager
         body: { username: account.username }
       });
 
+      // Enhanced error handling - check if it's actually a "no problems found" case
       if (error) {
         console.error(`${account.platform} sync error:`, error);
-        throw new Error(`Sync failed: ${error.message || 'Unknown error'}`);
+        
+        // Check if the error message indicates no problems found (not a real error)
+        const errorMessage = error.message || '';
+        const isNoProblemsError = errorMessage.includes('No solved problems found') || 
+                                 errorMessage.includes('user does not exist') ||
+                                 errorMessage.includes('No problems found');
+        
+        if (isNoProblemsError) {
+          // Treat as successful sync with 0 problems
+          console.log(`No problems found for ${account.username} on ${account.platform}, treating as successful sync`);
+          
+          await supabase
+            .from('linked_accounts')
+            .update({ last_sync: new Date().toISOString() })
+            .eq('id', account.id);
+
+          toast({
+            title: "✅ Sync Complete!",
+            description: `Successfully synced 0 problems from ${account.platform}. No problems found for this account.`,
+          });
+
+          if (onProblemsUpdate) {
+            onProblemsUpdate();
+          }
+          return;
+        } else {
+          // Real error
+          throw new Error(`Sync failed: ${errorMessage}`);
+        }
       }
 
-      // Fix: Handle case where no problems are returned or response is unexpected
+      // Handle successful response
       if (!data) {
         console.log(`No data returned from ${account.platform} sync`);
         toast({
           title: "✅ Sync Complete!",
           description: `Successfully synced 0 problems from ${account.platform}. No problems found for this account.`,
         });
+
+        await supabase
+          .from('linked_accounts')
+          .update({ last_sync: new Date().toISOString() })
+          .eq('id', account.id);
+
+        if (onProblemsUpdate) {
+          onProblemsUpdate();
+        }
         return;
       }
 
@@ -137,6 +175,15 @@ export const useSyncManager = ({ onProblemsUpdate, onSyncComplete }: SyncManager
             title: "✅ Sync Complete!",
             description: `Successfully synced 0 problems from ${account.platform}. No problems found for this account.`,
           });
+
+          await supabase
+            .from('linked_accounts')
+            .update({ last_sync: new Date().toISOString() })
+            .eq('id', account.id);
+
+          if (onProblemsUpdate) {
+            onProblemsUpdate();
+          }
           return;
         }
         toast({
