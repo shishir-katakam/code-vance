@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getPlatformData } from './PlatformConfig';
@@ -101,12 +100,11 @@ export const useSyncManager = ({ onProblemsUpdate, onSyncComplete }: SyncManager
 
       const syncFunctionMap = {
         'LeetCode': 'sync-leetcode',
-        'GeeksforGeeks': 'sync-geeksforgeeks'
+        'GeeksforGeeks': 'sync-geeksforgeeks',
+        'Codeforces': 'sync-codeforces'
       };
       const syncFunction = syncFunctionMap[account.platform as keyof typeof syncFunctionMap];
-      if (!syncFunction) {
-        throw new Error(`${account.platform} sync not implemented`);
-      }
+      if (!syncFunction) throw new Error(`${account.platform} sync not implemented`);
       globalSyncState.syncProgress[account.platform] = 25;
       console.log(`📡 Calling ${syncFunction} for ${account.username}`);
 
@@ -114,7 +112,14 @@ export const useSyncManager = ({ onProblemsUpdate, onSyncComplete }: SyncManager
         body: { username: account.username }
       });
 
-      // Enhanced error handling - check if it's actually a "no problems found" case
+      // ---------- PATCH: Handle Edge Function returning { error: ... } with 2xx ----------
+      if (!error && data && typeof data === 'object' && 'error' in data) {
+        // The edge function returned a 2xx but body has error property
+        console.error(`${account.platform} sync returned error in data:`, data.error);
+        throw new Error(`Sync failed: ${typeof data.error === "string" ? data.error : JSON.stringify(data.error)}`);
+      }
+      // ----------------------------------------------------------------------
+
       if (error) {
         console.error(`${account.platform} sync error:`, error);
         
