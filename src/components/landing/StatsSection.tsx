@@ -52,7 +52,7 @@ const StatsSection = ({
         ].map((stat, index) => (
           <div 
             key={index} 
-            className="group transform transition-all duration-500 hover:scale-105 hover:-translate-y-1 animate-gentle-float"
+            className="group transform transition-all duration-500 hover:scale-105 hover:-translate-y-1 animate-air-flow"
             style={{ 
               animationDelay: `${500 + index * 200}ms`,
               animationDuration: "1000ms"
@@ -60,7 +60,7 @@ const StatsSection = ({
           >
             <div className="flex items-center justify-center mb-2 sm:mb-3 md:mb-4 transition-all duration-300">
               <div className="relative">
-                <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-purple-400 group-hover:scale-110 transition-all duration-300 group-hover:text-purple-300 animate-air-flow" />
+                <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-purple-400 group-hover:scale-110 transition-all duration-300 group-hover:text-purple-300" />
                 <div className="absolute inset-0 bg-purple-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-500 scale-150"></div>
               </div>
               {stat.isRealTime && (
@@ -70,7 +70,7 @@ const StatsSection = ({
                 </div>
               )}
             </div>
-            <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-1 sm:mb-2 bg-gradient-to-br from-white via-purple-200 to-pink-200 bg-clip-text text-transparent leading-tight transition-all duration-500 group-hover:scale-110 animate-air-flow">
+            <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-1 sm:mb-2 bg-gradient-to-br from-white via-purple-200 to-pink-200 bg-clip-text text-transparent leading-tight transition-all duration-500 group-hover:scale-110">
               {stat.number}
             </div>
             <div className="text-slate-300 font-medium text-xs sm:text-sm md:text-base px-2 transition-all duration-300 group-hover:text-slate-200">
@@ -86,7 +86,7 @@ const StatsSection = ({
       )}
       
       {/* Additional info about total signups */}
-      <div className="text-center mt-3 sm:mt-4 md:mt-5 text-xs text-slate-500 px-2 transition-all duration-300 hover:text-slate-400 animate-subtle-pulse">
+      <div className="text-center mt-3 sm:mt-4 md:mt-5 text-xs text-slate-500 px-2 transition-all duration-300 hover:text-slate-400">
         Join {formatNumber(actualUserCount)} developers tracking their coding journey
       </div>
     </div>

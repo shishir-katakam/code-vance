@@ -39,19 +39,19 @@ const features = [
 
 const FeaturesGrid = ({ highlight }: FeaturesGridProps) => (
   <div
-    className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-16 md:mb-24 px-4 ${highlight ? "ring-4 ring-purple-400/50 rounded-2xl p-4 animate-subtle-pulse" : ""}`}
+    className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-16 md:mb-24 px-4 ${highlight ? "ring-4 ring-purple-400/50 rounded-2xl p-4" : ""}`}
   >
     {features.map((feature, index) => (
       <Card
         key={index}
-        className="bg-black/40 border-white/10 backdrop-blur-xl hover:bg-black/60 transition-all duration-500 hover:scale-105 hover:-translate-y-2 group animate-fade-in hover:shadow-2xl hover:shadow-purple-500/20 animate-gentle-float"
+        className="bg-black/40 border-white/10 backdrop-blur-xl hover:bg-black/60 transition-all duration-500 hover:scale-105 hover:-translate-y-2 group animate-fade-in hover:shadow-2xl hover:shadow-purple-500/20 animate-air-flow"
         style={{
           animationDelay: feature.delay,
           animationDuration: "800ms"
         }}
       >
         <CardHeader className="text-center pb-3 md:pb-4">
-          <div className={`w-12 h-12 md:w-16 md:h-16 mx-auto rounded-2xl bg-gradient-to-br ${feature.color} p-3 md:p-4 mb-3 md:mb-4 group-hover:scale-110 transition-all duration-300 shadow-lg animate-air-flow`}>
+          <div className={`w-12 h-12 md:w-16 md:h-16 mx-auto rounded-2xl bg-gradient-to-br ${feature.color} p-3 md:p-4 mb-3 md:mb-4 group-hover:scale-110 transition-all duration-300 shadow-lg`}>
             <feature.icon className="w-6 h-6 md:w-8 md:h-8 text-white transition-all duration-300 group-hover:scale-105" />
           </div>
           <CardTitle className="text-white text-lg md:text-xl font-semibold group-hover:text-purple-300 transition-all duration-300">
