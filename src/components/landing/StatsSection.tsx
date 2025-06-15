@@ -64,7 +64,7 @@ const StatsSection = ({
           >
             <div className="flex items-center justify-center mb-2 sm:mb-3 md:mb-4 transition-all duration-[500ms] ease-in-out">
               <div className="relative">
-                <stat.icon className={`w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 ${stat.color || 'text-purple-400'} group-hover:scale-125 group-hover:rotate-6 transition-all duration-[650ms] ease-in-out group-hover:text-purple-300`} />
+                <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-purple-400 group-hover:scale-125 group-hover:rotate-6 transition-all duration-[650ms] ease-in-out group-hover:text-purple-300" />
                 <div className="absolute inset-0 bg-purple-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-[700ms] ease-in-out scale-150"></div>
               </div>
               {stat.isRealTime && (
