@@ -133,9 +133,9 @@ export default {
 				'accordion-up': 'accordion-up 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 				'fade-in': 'fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
 				'slide-up': 'slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-				'gentle-float': 'gentle-float 4s ease-in-out infinite',
-				'gentle-float-delayed': 'gentle-float-delayed 5s ease-in-out infinite',
-				'gentle-float-slow': 'gentle-float-slow 6s ease-in-out infinite'
+				'gentle-float': 'gentle-float 6s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite',
+				'gentle-float-delayed': 'gentle-float-delayed 7s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite',
+				'gentle-float-slow': 'gentle-float-slow 8s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite'
 			},
 			transitionTimingFunction: {
 				'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
