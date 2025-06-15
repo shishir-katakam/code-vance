@@ -148,7 +148,7 @@ const ProblemCard = ({
                   <Trash2 className={`h-4 w-4 ${deleting ? 'animate-spin' : ''}`} />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="bg-black/90 border-white/20 sm:rounded-lg max-w-sm">
+              <AlertDialogContent className="bg-black/90 border-white/20">
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-white text-center">Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription className="text-gray-300 text-center">
