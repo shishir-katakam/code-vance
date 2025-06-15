@@ -72,6 +72,21 @@ serve(async (req) => {
         
         console.log(`Found ${solvedCount} problems solved on GeeksforGeeks`)
         
+        // If zero problems, return success with message
+        if (solvedCount === 0) {
+          console.log(`GeeksforGeeks user ${username} has zero solved problems - returning success`)
+          return new Response(
+            JSON.stringify({
+              problems: [],
+              message: "No solved problems found. Sync completed successfully."
+            }),
+            {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            }
+          )
+        }
+        
         if (solvedCount > 0) {
           // Generate problems based on actual count - HANDLE ANY NUMBER (no limit)
           const gfgProblemNames = [
@@ -163,27 +178,40 @@ serve(async (req) => {
           }
           
           console.log(`Successfully generated ${problems.length} problems for GeeksforGeeks based on actual count (${solvedCount} total solved)`)
-        } else {
-          throw new Error('No problems found in profile')
         }
       } else {
         console.log(`GeeksforGeeks profile request failed with status: ${profileResponse.status}`)
-        throw new Error('Profile not accessible')
+        // Profile not accessible - this is an actual error (user not found)
+        return new Response(
+          JSON.stringify({ error: `User with username '${username}' not found on GeeksforGeeks. Please check if the username is correct and profile is public.` }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        )
       }
     } catch (error) {
       console.log('GeeksforGeeks scraping error:', error)
-      throw new Error(`Unable to fetch GeeksforGeeks data for ${username}. Please check if the username is correct and profile is public.`)
+      // Error accessing profile - this is an actual error (user not found)
+      return new Response(
+        JSON.stringify({ error: `User with username '${username}' not found on GeeksforGeeks. Please check if the username is correct and profile is public.` }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      )
     }
 
     console.log(`GeeksforGeeks sync completed: ${problems.length} problems`)
     return new Response(JSON.stringify({ problems }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
     })
 
   } catch (error) {
     console.error('Error in sync-geeksforgeeks:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: `An internal error occurred: ${error.message}` }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -64,6 +64,21 @@ serve(async (req) => {
           const totalSolved = stats.reduce((sum, stat) => sum + stat.count, 0)
           console.log(`User has ${totalSolved} total solved problems`)
           
+          // If zero problems, return success with message
+          if (totalSolved === 0) {
+            console.log(`LeetCode user ${username} has zero solved problems - returning success`)
+            return new Response(
+              JSON.stringify({
+                problems: [],
+                message: "No solved problems found. Sync completed successfully."
+              }),
+              {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200,
+              }
+            )
+          }
+          
           // Get difficulty breakdown
           const easyCount = stats.find(s => s.difficulty === 'Easy')?.count || 0
           const mediumCount = stats.find(s => s.difficulty === 'Medium')?.count || 0
@@ -123,7 +138,14 @@ serve(async (req) => {
           console.log(`Generated ${problems.length} problems for LeetCode (actual: ${totalSolved})`)
         } else {
           console.log('No user data found in GraphQL response')
-          throw new Error('User not found')
+          // User not found - this is an actual error
+          return new Response(
+            JSON.stringify({ error: `User with username '${username}' not found on LeetCode.` }),
+            {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            }
+          )
         }
       } else {
         console.log(`GraphQL request failed with status: ${graphqlResponse.status}`)
@@ -142,8 +164,24 @@ serve(async (req) => {
           const statsData = await statsResponse.json()
           console.log('LeetCode stats API response:', statsData)
           
-          if (statsData.status === 'success' && statsData.totalSolved > 0) {
-            const totalSolved = statsData.totalSolved
+          if (statsData.status === 'success') {
+            const totalSolved = statsData.totalSolved || 0
+            
+            // If zero problems, return success with message
+            if (totalSolved === 0) {
+              console.log(`LeetCode user ${username} has zero solved problems - returning success`)
+              return new Response(
+                JSON.stringify({
+                  problems: [],
+                  message: "No solved problems found. Sync completed successfully."
+                }),
+                {
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                  status: 200,
+                }
+              )
+            }
+            
             const easySolved = statsData.easySolved || 0
             const mediumSolved = statsData.mediumSolved || 0
             const hardSolved = statsData.hardSolved || 0
@@ -168,14 +206,35 @@ serve(async (req) => {
             }
             console.log(`Generated ${problems.length} problems based on stats API (${totalSolved} total solved)`)
           } else {
-            throw new Error('No solved problems found')
+            // User not found in stats API - this is an actual error
+            return new Response(
+              JSON.stringify({ error: `User with username '${username}' not found on LeetCode.` }),
+              {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200,
+              }
+            )
           }
         } else {
-          throw new Error('Stats API failed')
+          // Stats API failed - this is an actual error
+          return new Response(
+            JSON.stringify({ error: `User with username '${username}' not found on LeetCode.` }),
+            {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            }
+          )
         }
       } catch (apiError) {
         console.log('All LeetCode APIs failed:', apiError)
-        throw new Error('Unable to fetch LeetCode data')
+        // All APIs failed - this is an actual error
+        return new Response(
+          JSON.stringify({ error: `User with username '${username}' not found on LeetCode.` }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        )
       }
     }
 
@@ -183,12 +242,13 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({ problems }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
     })
 
   } catch (error) {
     console.error('Error in sync-leetcode:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: `An internal error occurred: ${error.message}` }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
