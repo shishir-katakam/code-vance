@@ -108,7 +108,12 @@ const AccountCard = ({
               <span className="text-slate-300">Syncing progress</span>
               <span className="text-purple-400 font-medium">{Math.round(progress)}%</span>
             </div>
-            <Progress value={progress} className="h-2 bg-slate-700" />
+            <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-700/50">
+              <div 
+                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300 ease-out rounded-full"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
             {speed > 0 && (
               <div className="flex items-center text-xs text-slate-400">
                 <Zap className="h-3 w-3 mr-1 text-yellow-400" />
