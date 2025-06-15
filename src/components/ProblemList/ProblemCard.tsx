@@ -149,23 +149,27 @@ const ProblemCard = ({
                   <Trash2 className={`h-4 w-4 ${deleting ? 'animate-spin' : ''}`} />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="bg-black/90 border-white/20 !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2 sm:rounded-lg">
+              <AlertDialogContent
+                // Remove all position overrides! Use default centering and adjust padding if needed
+                className="bg-black/90 border-white/20 sm:rounded-lg flex flex-col items-center justify-center p-6 w-full max-w-md"
+                // ^ "flex flex-col items-center justify-center" ensures perfect centering for content inside
+              >
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="text-white">Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription className="text-gray-300">
+                  <AlertDialogTitle className="text-white text-center">Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-gray-300 text-center">
                     This action cannot be undone. This will permanently delete the problem "{problem.name}".
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600">
-                    Cancel
-                  </AlertDialogCancel>
+                <AlertDialogFooter className="flex flex-col gap-2 w-full">
                   <AlertDialogAction
                     onClick={() => onDelete(problem)}
-                    className="bg-red-600 hover:bg-red-700 text-white"
+                    className="bg-red-600 hover:bg-red-700 text-white w-full"
                   >
                     Delete
                   </AlertDialogAction>
+                  <AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 w-full">
+                    Cancel
+                  </AlertDialogCancel>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -177,4 +181,3 @@ const ProblemCard = ({
 };
 
 export default ProblemCard;
-
