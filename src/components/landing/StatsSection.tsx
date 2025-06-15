@@ -34,7 +34,7 @@ const StatsSection = ({
   const actualProblemsCount = stats.total_problems ?? 0;
   
   return (
-    <div className={`bg-black/30 backdrop-blur-xl rounded-2xl md:rounded-3xl border border-white/10 p-6 sm:p-8 md:p-12 mb-12 sm:mb-16 md:mb-24 mx-2 sm:mx-4 animate-fade-in delay-500 transition-all duration-[900ms] ease-[cubic-bezier(.86,0,.36,1)] hover:bg-black/40 hover:border-white/20 hover:shadow-2xl hover:shadow-purple-500/10`}>
+    <div className={`bg-black/30 backdrop-blur-xl rounded-2xl md:rounded-3xl border border-white/10 p-6 sm:p-8 md:p-12 mb-12 sm:mb-16 md:mb-24 mx-2 sm:mx-4 animate-fade-in delay-500 transition-all duration-[1600ms] ease-liquid hover:bg-black/40 hover:border-white/20 hover:shadow-2xl hover:shadow-purple-500/20 hover:scale-[1.02] animate-liquid-float`}>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 sm:gap-8 md:gap-12 text-center">
         {[
           {
@@ -52,45 +52,45 @@ const StatsSection = ({
         ].map((stat, index) => (
           <div 
             key={index} 
-            className="group transform transition-all duration-[1200ms] ease-[cubic-bezier(.86,0,.36,1)] hover:scale-105 hover:-translate-y-2"
+            className="group transform transition-all duration-[1800ms] ease-liquid hover:scale-110 hover:-translate-y-3 animate-liquid-float"
             style={{ 
               animationDelay: `${650 + index * 220}ms`,
-              animationDuration: "1000ms",
+              animationDuration: "1400ms",
               animationName: "fade-in",
-              animationTimingFunction: "cubic-bezier(.86,0,.36,1)",
+              animationTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
               opacity: 1,
               willChange: "transform, opacity"
             }}
           >
-            <div className="flex items-center justify-center mb-2 sm:mb-3 md:mb-4 transition-all duration-[500ms] ease-in-out">
+            <div className="flex items-center justify-center mb-2 sm:mb-3 md:mb-4 transition-all duration-[800ms] ease-liquid">
               <div className="relative">
-                <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-purple-400 group-hover:scale-125 group-hover:rotate-6 transition-all duration-[650ms] ease-in-out group-hover:text-purple-300" />
-                <div className="absolute inset-0 bg-purple-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-[700ms] ease-in-out scale-150"></div>
+                <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-purple-400 group-hover:scale-125 group-hover:rotate-12 transition-all duration-[1000ms] ease-liquid group-hover:text-purple-300 animate-liquid-pulse" />
+                <div className="absolute inset-0 bg-purple-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-all duration-[1200ms] ease-liquid scale-150 animate-liquid-wave"></div>
               </div>
               {stat.isRealTime && (
-                <div className="ml-1.5 sm:ml-2 flex items-center transition-all duration-[400ms] ease-in group-hover:scale-110">
-                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
-                  <span className="text-xs sm:text-xs md:text-xs text-green-400 ml-1 font-medium transition-all duration-[600ms] ease-in group-hover:text-green-300">LIVE</span>
+                <div className="ml-1.5 sm:ml-2 flex items-center transition-all duration-[700ms] ease-liquid group-hover:scale-110">
+                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 bg-green-400 rounded-full animate-liquid-pulse shadow-lg shadow-green-400/50"></div>
+                  <span className="text-xs sm:text-xs md:text-xs text-green-400 ml-1 font-medium transition-all duration-[800ms] ease-liquid group-hover:text-green-300">LIVE</span>
                 </div>
               )}
             </div>
-            <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-1 sm:mb-2 bg-gradient-to-br from-white via-purple-200 to-pink-200 bg-clip-text text-transparent leading-tight transition-all duration-[1200ms] ease-[cubic-bezier(.86,0,.36,1)] group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-purple-300 group-hover:via-pink-300 group-hover:to-blue-300">
+            <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-1 sm:mb-2 bg-gradient-to-br from-white via-purple-200 to-pink-200 bg-clip-text text-transparent leading-tight transition-all duration-[1600ms] ease-liquid group-hover:scale-115 group-hover:bg-gradient-to-br group-hover:from-purple-300 group-hover:via-pink-300 group-hover:to-blue-300 animate-liquid-float">
               {stat.number}
             </div>
-            <div className="text-slate-300 font-medium text-xs sm:text-sm md:text-base px-2 transition-all duration-[600ms] ease-in-out group-hover:text-slate-200 group-hover:scale-105">
+            <div className="text-slate-300 font-medium text-xs sm:text-sm md:text-base px-2 transition-all duration-[900ms] ease-liquid group-hover:text-slate-200 group-hover:scale-105">
               {stat.label}
             </div>
           </div>
         ))}
       </div>
       {((actualUserCount > 0) || (!statsLoading && (actualUserCount > 0 || actualProblemsCount > 0))) && (
-        <div className="text-center mt-4 sm:mt-6 md:mt-8 text-xs sm:text-xs md:text-sm text-slate-400 px-2 animate-fade-in" style={{ animationDelay: '1.7s', animationFillMode: 'forwards', animationDuration: "1100ms", opacity: 1 }}>
+        <div className="text-center mt-4 sm:mt-6 md:mt-8 text-xs sm:text-xs md:text-sm text-slate-400 px-2 animate-fade-in transition-all duration-[800ms] ease-liquid hover:text-slate-300 hover:scale-105" style={{ animationDelay: '1.7s', animationFillMode: 'forwards', animationDuration: "1400ms", opacity: 1 }}>
           📊 All statistics update in real-time as users join and solve problems
         </div>
       )}
       
       {/* Additional info about total signups */}
-      <div className="text-center mt-3 sm:mt-4 md:mt-5 text-xs text-slate-500 px-2">
+      <div className="text-center mt-3 sm:mt-4 md:mt-5 text-xs text-slate-500 px-2 transition-all duration-700 ease-liquid hover:text-slate-400 hover:scale-105 animate-liquid-pulse">
         Join {formatNumber(actualUserCount)} developers tracking their coding journey
       </div>
     </div>
