@@ -160,10 +160,7 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
 
   return (
     <div className="space-y-6">
-      {/* AI Question Box */}
-      <AiQuestionBox problemName={formData.name || undefined} />
-      
-      {/* Original Problem Form */}
+      {/* Problem Form - Now First */}
       <Card className="bg-black/40 border-white/10 backdrop-blur-md">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-white">Add New Problem</CardTitle>
@@ -413,6 +410,9 @@ const ProblemForm = ({ onSubmit, onCancel, problems }: ProblemFormProps) => {
           )}
         </CardContent>
       </Card>
+      
+      {/* AI Question Box - Now Below Problem Form */}
+      <AiQuestionBox problemName={formData.name || undefined} />
     </div>
   );
 };
