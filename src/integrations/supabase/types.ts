@@ -9,6 +9,63 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_question_answers: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          problem_name: string | null
+          programming_language: string
+          question: string
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          problem_name?: string | null
+          programming_language: string
+          question: string
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          problem_name?: string | null
+          programming_language?: string
+          question?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_ai_usage: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          question_answers_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          question_answers_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          question_answers_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       linked_accounts: {
         Row: {
           created_at: string
