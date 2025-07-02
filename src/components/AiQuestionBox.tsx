@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,10 +11,11 @@ import { Textarea } from '@/components/ui/textarea';
 
 interface AiQuestionBoxProps {
   problemName?: string;
+  problemDescription?: string;
+  autoFillQuestion?: boolean;
 }
 
-const AiQuestionBox = ({ problemName }: AiQuestionBoxProps) => {
-  const [question, setQuestion] = useState('');
+const AiQuestionBox = ({ problemName, problemDescription, autoFillQuestion = false }: AiQuestionBoxProps) => {
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [answer, setAnswer] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +26,25 @@ const AiQuestionBox = ({ problemName }: AiQuestionBoxProps) => {
     'JavaScript', 'Python', 'Java', 'C++', 'C#', 'TypeScript', 
     'Go', 'Rust', 'PHP', 'Ruby', 'Swift', 'Kotlin', 'Dart'
   ];
+
+  // Auto-generate question from problem data
+  const generateQuestion = () => {
+    if (!problemName && !problemDescription) {
+      return 'How do I solve this coding problem?';
+    }
+    
+    let question = '';
+    if (problemName) {
+      question += `Problem: ${problemName}`;
+    }
+    if (problemDescription) {
+      if (question) question += '\n\n';
+      question += `Description: ${problemDescription}`;
+    }
+    question += '\n\nPlease provide a detailed solution approach and code implementation.';
+    
+    return question;
+  };
 
   useEffect(() => {
     checkDailyUsage();
@@ -57,10 +76,10 @@ const AiQuestionBox = ({ problemName }: AiQuestionBoxProps) => {
   };
 
   const handleAskQuestion = async () => {
-    if (!question.trim() || !selectedLanguage) {
+    if (!selectedLanguage) {
       toast({
         title: "Missing Information",
-        description: "Please provide both a question and select a programming language.",
+        description: "Please select a programming language.",
         variant: "destructive",
       });
       return;
@@ -79,9 +98,11 @@ const AiQuestionBox = ({ problemName }: AiQuestionBoxProps) => {
     setAnswer('');
 
     try {
+      const question = generateQuestion();
+      
       const { data, error } = await supabase.functions.invoke('answer-question', {
         body: {
-          question: question.trim(),
+          question: question,
           programmingLanguage: selectedLanguage,
           problemName: problemName || null
         }
@@ -128,7 +149,7 @@ const AiQuestionBox = ({ problemName }: AiQuestionBoxProps) => {
         <CardTitle className="text-white flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Brain className="h-5 w-5 text-purple-400" />
-            <span>AI Question Assistant</span>
+            <span>AI Assistant{problemName ? ` for ${problemName}` : ''}</span>
           </div>
           <div className="flex items-center space-x-1 text-sm">
             <Zap className="h-4 w-4 text-yellow-400" />
@@ -137,41 +158,41 @@ const AiQuestionBox = ({ problemName }: AiQuestionBoxProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {autoFillQuestion && (problemName || problemDescription) && (
           <div className="space-y-2">
-            <Label htmlFor="aiQuestion" className="text-white">Your Question</Label>
-            <Input
-              id="aiQuestion"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
-              placeholder="e.g., How do I reverse a linked list?"
-              disabled={isLoading || remainingQuestions <= 0}
-            />
+            <Label className="text-white">Auto-Generated Question</Label>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+              <Textarea
+                value={generateQuestion()}
+                readOnly
+                className="bg-transparent border-none text-white resize-none min-h-[100px] text-sm"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="aiLanguage" className="text-white">Programming Language</Label>
-            <Select 
-              value={selectedLanguage}
-              onValueChange={setSelectedLanguage}
-              disabled={isLoading || remainingQuestions <= 0}
-            >
-              <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                {programmingLanguages.map((lang) => (
-                  <SelectItem key={lang} value={lang}>{lang}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="aiLanguage" className="text-white">Programming Language</Label>
+          <Select 
+            value={selectedLanguage}
+            onValueChange={setSelectedLanguage}
+            disabled={isLoading || remainingQuestions <= 0}
+          >
+            <SelectTrigger className="bg-white/5 border-white/10 text-white">
+              <SelectValue placeholder="Select language" />
+            </SelectTrigger>
+            <SelectContent>
+              {programmingLanguages.map((lang) => (
+                <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex justify-center">
           <Button
             onClick={handleAskQuestion}
-            disabled={isLoading || remainingQuestions <= 0 || !question.trim() || !selectedLanguage}
+            disabled={isLoading || remainingQuestions <= 0 || !selectedLanguage}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50"
           >
             {isLoading ? (

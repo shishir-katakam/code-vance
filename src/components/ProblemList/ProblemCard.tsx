@@ -11,11 +11,22 @@ import ProblemDetailModal from '../ProblemDetailModal';
 interface ProblemCardProps {
   problem: Problem;
   onToggle: (id: number) => void;
+  onEdit?: (problem: Problem) => void;
+  onDelete?: (problem: Problem) => Promise<void>;
+  deleting?: boolean;
 }
 
-const ProblemCard = ({ problem, onToggle }: ProblemCardProps) => {
+const ProblemCard = ({ problem, onToggle, onEdit, onDelete, deleting }: ProblemCardProps) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+
+  const handleSave = () => {
+    if (onEdit) {
+      onEdit(problem);
+    }
+    // Trigger a re-fetch or update of the problem list
+    window.location.reload();
+  };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty?.toLowerCase()) {
@@ -154,6 +165,7 @@ const ProblemCard = ({ problem, onToggle }: ProblemCardProps) => {
         problem={problem}
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
+        onSave={handleSave}
       />
 
       <ProblemDetailModal

@@ -148,7 +148,11 @@ const ProblemDetailModal = ({ problem, isOpen, onClose }: ProblemDetailModalProp
                     Hide
                   </Button>
                 </div>
-                <AiQuestionBox problemName={problem.name} />
+                <AiQuestionBox 
+                  problemName={problem.name} 
+                  problemDescription={problem.description}
+                  autoFillQuestion={true}
+                />
               </div>
             )}
           </div>
