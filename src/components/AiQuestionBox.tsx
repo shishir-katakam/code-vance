@@ -8,6 +8,9 @@ import { Brain, Loader2, MessageSquare, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import CodeBlock from '@/components/ui/code-block';
 
 interface AiQuestionBoxProps {
   problemName?: string;
@@ -220,13 +223,64 @@ const AiQuestionBox = ({ problemName, problemDescription, autoFillQuestion = fal
         {answer && (
           <div className="space-y-2">
             <Label className="text-white">AI Answer</Label>
-            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-              <Textarea
-                value={answer}
-                readOnly
-                className="bg-transparent border-none text-white placeholder:text-gray-400 resize-none min-h-[200px]"
-                placeholder="AI answer will appear here..."
-              />
+            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 max-h-[600px] overflow-y-auto">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  code({ inline, className, children, ...props }: any) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    const isInline = inline === true;
+                    
+                    return !isInline ? (
+                      <CodeBlock
+                        className={className}
+                        inline={false}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </CodeBlock>
+                    ) : (
+                      <CodeBlock
+                        className={className}
+                        inline={true}
+                      >
+                        {String(children)}
+                      </CodeBlock>
+                    );
+                  },
+                  p: ({ children }) => (
+                    <p className="text-white leading-relaxed mb-4 last:mb-0">{children}</p>
+                  ),
+                  h1: ({ children }) => (
+                    <h1 className="text-white text-2xl font-bold mb-4 pb-2 border-b border-white/20">{children}</h1>
+                  ),
+                  h2: ({ children }) => (
+                    <h2 className="text-white text-xl font-semibold mb-3 mt-6 first:mt-0">{children}</h2>
+                  ),
+                  h3: ({ children }) => (
+                    <h3 className="text-white text-lg font-semibold mb-2 mt-4 first:mt-0">{children}</h3>
+                  ),
+                  ul: ({ children }) => (
+                    <ul className="text-white list-disc list-inside mb-4 space-y-1">{children}</ul>
+                  ),
+                  ol: ({ children }) => (
+                    <ol className="text-white list-decimal list-inside mb-4 space-y-1">{children}</ol>
+                  ),
+                  li: ({ children }) => (
+                    <li className="text-gray-200">{children}</li>
+                  ),
+                  strong: ({ children }) => (
+                    <strong className="text-white font-semibold">{children}</strong>
+                  ),
+                  em: ({ children }) => (
+                    <em className="text-purple-300">{children}</em>
+                  ),
+                  blockquote: ({ children }) => (
+                    <blockquote className="border-l-4 border-purple-500 pl-4 italic text-gray-300 my-4">{children}</blockquote>
+                  ),
+                }}
+              >
+                {answer}
+              </ReactMarkdown>
             </div>
           </div>
         )}
