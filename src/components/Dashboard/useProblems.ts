@@ -15,6 +15,7 @@ export interface Problem {
   dateAdded: string;
   url?: string;
   user_id?: string;
+  solvedDate?: string;
 }
 
 export const useProblems = (user: any) => {
@@ -85,6 +86,7 @@ export const useProblems = (user: any) => {
         dateAdded: problem.date_added ? problem.date_added.split('T')[0] : '',
         url: problem.url || '',
         user_id: problem.user_id,
+        solvedDate: problem.solved_date ? problem.solved_date.split('T')[0] : undefined,
       }));
 
       console.log('Loaded problems:', formatted.length);
@@ -167,18 +169,27 @@ export const useProblems = (user: any) => {
     if (!problem) return;
 
     try {
+      const updateData = { 
+        completed: !problem.completed,
+        solved_date: !problem.completed ? new Date().toISOString() : null
+      };
+
       const { error } = await supabase
         .from('problems')
-        .update({ completed: !problem.completed })
+        .update(updateData)
         .eq('id', id)
         .eq('user_id', user.id);
 
       if (error) throw error;
 
-      setProblems(problems.map(problem =>
-        problem.id === id
-          ? { ...problem, completed: !problem.completed }
-          : problem
+      setProblems(problems.map(p =>
+        p.id === id
+          ? { 
+              ...p, 
+              completed: !p.completed,
+              solvedDate: !p.completed ? new Date().toISOString().split('T')[0] : undefined
+            }
+          : p
       ));
 
       toast({

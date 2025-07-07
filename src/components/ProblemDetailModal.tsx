@@ -74,6 +74,19 @@ const ProblemDetailModal = ({ problem, isOpen, onClose }: ProblemDetailModalProp
                   {new Date(problem.dateAdded).toLocaleDateString()}
                 </span>
               </div>
+
+              {problem.completed && problem.solvedDate && (
+                <div className="flex items-center space-x-2">
+                  <Zap className="h-4 w-4 text-purple-400" />
+                  <span className="text-gray-300">Completed:</span>
+                  <span className="text-white">
+                    {new Date(problem.solvedDate).toLocaleDateString()}
+                  </span>
+                  <span className="text-purple-400 text-sm">
+                    ({Math.ceil((new Date(problem.solvedDate).getTime() - new Date(problem.dateAdded).getTime()) / (1000 * 60 * 60 * 24))} days)
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

@@ -11,4 +11,5 @@ export interface Problem {
   dateAdded: string;
   url?: string;
   user_id?: string;
+  solvedDate?: string;
 }

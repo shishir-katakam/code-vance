@@ -185,7 +185,7 @@ serve(async (req) => {
           'X-Title': 'Code Journey AI Tracker',
         },
         body: JSON.stringify({
-          model: 'deepseek/deepseek-r1-0528:free',
+          model: 'deepseek/deepseek-chat',
           messages: [
             {
               role: 'system',
@@ -241,8 +241,8 @@ Description: ${description}
 Analyze this problem and determine the PRIMARY skill/topic needed to solve it.`
             }
           ],
-          max_tokens: 100,
-          temperature: 0.1
+          max_tokens: 50,
+          temperature: 0
         }),
         signal: controller.signal
       });
