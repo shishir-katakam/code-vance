@@ -18,6 +18,22 @@ const ProblemDetailModal = ({ problem, isOpen, onClose }: ProblemDetailModalProp
 
   if (!problem) return null;
 
+  const getTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (diffDays > 0) {
+      return diffHours > 0 ? `${diffDays}d ${diffHours}h ago` : `${diffDays}d ago`;
+    } else if (diffHours > 0) {
+      return `${diffHours}h ago`;
+    } else {
+      return 'Today';
+    }
+  };
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty?.toLowerCase()) {
       case 'easy': return 'bg-green-500/20 text-green-400 border-green-500/30';
@@ -72,6 +88,9 @@ const ProblemDetailModal = ({ problem, isOpen, onClose }: ProblemDetailModalProp
                 <span className="text-gray-300">Added:</span>
                 <span className="text-white">
                   {new Date(problem.dateAdded).toLocaleDateString()}
+                </span>
+                <span className="text-green-400 text-sm font-medium">
+                  ({getTimeAgo(problem.dateAdded)})
                 </span>
               </div>
 
